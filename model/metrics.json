@@ -1,0 +1,16 @@
+{
+  "gbm": {
+    "roc_auc": 0.751,
+    "pr_auc": 0.458,
+    "brier": 0.1394
+  },
+  "logistic": {
+    "roc_auc": 0.753,
+    "pr_auc": 0.466,
+    "brier": 0.1389
+  },
+  "n_train": 16000,
+  "n_test": 4000,
+  "prevalence": 0.206,
+  "note": "Synthetic data only. Not validated on real patients. Not a medical device."
+}

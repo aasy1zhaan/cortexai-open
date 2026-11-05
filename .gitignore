@@ -1,0 +1,4 @@
+data/*.csv
+model/*.joblib
+*.db
+__pycache__/

@@ -3,204 +3,203 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>CortexAI Graft Care</title>
-<meta name="description" content="CortexAI builds clinical decision support that estimates kidney transplant rejection risk from immunogenetics, drug exposure and graft-injury biomarkers.">
+<title>CortexAI Organ Rejection Prediction</title>
+<meta name="description" content="CortexAI is clinical AI that predicts kidney transplant rejection from immunogenetics, immunosuppressant exposure and graft-injury biomarkers.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Michroma&family=Manrope:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/base.css">
 <style>
-  /* layout: cinematic hero (graft in the middle, split wordmark), then a calm, single-column reading flow */
-  .wrap { width: min(1180px, calc(100% - 40px)); margin: 0 auto; }
-  header.nav { position: absolute; top: 18px; left: 0; right: 0; z-index: 5; }
-  header.nav .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-  header.nav img { height: 28px; display: block; }
-  .links { display: flex; gap: 4px; padding: 6px; border-radius: 12px; align-items: center; }
-  .links a { font-size: 13px; text-decoration: none; padding: 7px 12px; border-radius: 8px; color: var(--text); }
-  .links a:hover { background: rgba(255,255,255,.06); }
-  .links a.cta { background: var(--ember); color: #1a0d00; font-weight: 700; }
+  /* layout: centred hero over a glowing graft; then rounded glass sections on one deep-navy canvas */
+  .wrap { width: min(1120px, calc(100% - 40px)); margin: 0 auto; }
+  .nav { position: absolute; top: 18px; left: 0; right: 0; z-index: 10; }
+  .nav .bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 8px 8px 8px 18px; border-radius: 999px; }
+  .nav img { height: 24px; display: block; }
+  .nav .links { display: flex; gap: 2px; align-items: center; }
+  .nav .links a { font-size: 14px; text-decoration: none; padding: 8px 14px; border-radius: 999px; color: #d7e3f5; }
+  .nav .links a:hover { background: rgba(255,255,255,.06); }
 
-  .hero { position: relative; height: clamp(640px, 92vh, 980px); overflow: hidden;
-    background: radial-gradient(70% 80% at 50% 45%, #0e3a74 0%, #082650 35%, #041430 70%, var(--ink) 100%); }
-  .hero::after { content: ""; position: absolute; inset: 0; pointer-events: none;
-    background: linear-gradient(to bottom, transparent 70%, var(--ink)), radial-gradient(120% 90% at 50% 50%, transparent 55%, rgba(0,0,0,.5)); }
-  .hero canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
-  .word { position: absolute; z-index: 2; font-family: var(--display); color: #f4f8ff; line-height: .9;
-    font-size: clamp(56px, 11.5vw, 176px); letter-spacing: -0.02em; pointer-events: none; text-shadow: 0 0 40px rgba(13,143,253,.25); }
-  .w1 { left: 2.5vw; top: 28%; } .w2 { right: 2.5vw; top: 46%; }
-  .lede { position: absolute; z-index: 2; left: 2.8vw; top: calc(28% + clamp(56px, 11.5vw, 176px) + 20px); max-width: 360px;
-    font-family: var(--display); font-size: 11px; letter-spacing: .08em; line-height: 1.75; text-transform: uppercase; color: #d6e3f5; }
-  .hot { position: absolute; z-index: 3; display: flex; align-items: center; gap: 10px; transform: translate(-14px, -14px); pointer-events: none; }
-  .hot .dot { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #fff; background: rgba(255,255,255,.18); box-shadow: 0 0 18px rgba(255,138,31,.8); }
-  .hot .lbl { background: #fff; color: #05101f; font-size: 12px; font-weight: 700; padding: 6px 12px; border-radius: 8px; white-space: nowrap; }
-  .layers { position: absolute; z-index: 3; left: 2.5vw; bottom: 9%; display: flex; gap: 8px; }
-  .layers button { width: 46px; height: 46px; border-radius: 50%; border: 1px solid rgba(255,255,255,.35); background: transparent;
-    font-family: var(--display); font-size: 12px; cursor: pointer; color: rgba(255,255,255,.55); }
-  .layers button[aria-pressed="true"] { color: #fff; border-color: #fff; background: rgba(255,255,255,.08); }
-  .heroCard { position: absolute; z-index: 3; right: 2.5vw; bottom: 9%; width: 330px; padding: 16px; }
-  .heroCard .h { display: flex; justify-content: space-between; align-items: center; font-family: var(--display); font-size: 13px; }
-  .heroCard .k { font-size: 11px; color: var(--muted); margin: 2px 0 10px; }
-  .heroCard p { margin: 0; padding: 12px; border-radius: 10px; background: rgba(13,143,253,.14); border: 1px solid rgba(13,143,253,.28); font-size: 13px; color: #d9e9ff; }
+  .hero { position: relative; overflow: hidden; padding: 150px 0 0; text-align: center; min-height: 820px;
+    background: radial-gradient(60% 55% at 50% 62%, rgba(45,125,255,.38), transparent 70%), radial-gradient(90% 60% at 50% 115%, #3b8cff 0%, #123c8c 35%, transparent 70%), var(--ink); }
+  .hero::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 160px; background: linear-gradient(transparent, var(--ink)); pointer-events: none; }
+  .hero .eyebrow { color: #9fc6ff; }
+  .hero h1 { font-size: clamp(40px, 6.2vw, 76px); font-weight: 600; line-height: 1.04; margin: 14px auto 0; max-width: 900px;
+    background: linear-gradient(180deg, #ffffff 30%, #a9c7f2); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .hero .sub { color: #b8c9e3; font-size: clamp(16px, 1.6vw, 19px); max-width: 620px; margin: 18px auto 0; }
+  .hero .ctas { display: flex; gap: 10px; justify-content: center; margin-top: 28px; flex-wrap: wrap; position: relative; z-index: 3; }
+  .stage { position: relative; height: 640px; margin-top: 10px; }
+  .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .hot { position: absolute; z-index: 3; display: flex; align-items: center; gap: 10px; transform: translate(-13px, -13px); pointer-events: none; }
+  .hot .dot { width: 26px; height: 26px; border-radius: 50%; border: 2px solid #fff; background: rgba(255,255,255,.18); box-shadow: 0 0 18px rgba(255,154,92,.8); }
+  .hot .lbl { background: #fff; color: #05101f; font-size: 13px; font-weight: 600; padding: 6px 12px; border-radius: 999px; white-space: nowrap; }
+  .seg { position: absolute; z-index: 4; left: 50%; bottom: 70px; transform: translateX(-50%); display: flex; gap: 4px; padding: 5px; border-radius: 999px; }
+  .seg button { border: 0; background: transparent; color: #c9d8ee; font-size: 13px; font-weight: 500; padding: 8px 14px; border-radius: 999px; cursor: pointer; white-space: nowrap; }
+  .seg button[aria-pressed="true"] { background: #fff; color: #061230; }
+  .layerNote { position: absolute; z-index: 4; left: 50%; bottom: 8px; margin: 0; transform: translateX(-50%); width: min(520px, 90%); font-size: 14px; color: #cfe0f8; }
 
-  section { padding: 96px 0; }
-  .sec-h { display: grid; gap: 12px; margin-bottom: 40px; max-width: 760px; }
-  .sec-h h2 { font-family: var(--display); font-size: clamp(24px, 3vw, 36px); line-height: 1.25; font-weight: 400; }
-  .sec-h p { color: var(--muted); margin: 0; font-size: 17px; max-width: 65ch; }
+  section { padding: 104px 0; }
+  .sec-h { display: grid; gap: 12px; margin-bottom: 36px; max-width: 720px; }
+  .sec-h.c { margin-left: auto; margin-right: auto; text-align: center; justify-items: center; }
+  .sec-h h2 { font-size: clamp(30px, 3.6vw, 44px); font-weight: 600; line-height: 1.12; }
+  .sec-h p { color: var(--muted); margin: 0; font-size: 18px; max-width: 62ch; }
+
+  .what { display: grid; grid-template-columns: 1.25fr 1fr; gap: 48px; align-items: center; padding: 44px; }
+  .what p { color: #c3d3ea; font-size: 17px; margin: 14px 0 0; max-width: 56ch; }
+  .facts { display: grid; gap: 22px; border-left: 1px solid var(--line); padding-left: 36px; }
+  .facts b { display: block; font-size: 40px; font-weight: 500; letter-spacing: -0.03em; line-height: 1.05; }
+  .facts span { color: var(--muted); font-size: 14px; }
 
   .layersGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-  .layerCard { padding: 24px; display: grid; gap: 10px; align-content: start; }
-  .layerCard .n { font-family: var(--display); font-size: 12px; color: var(--ember); }
-  .layerCard h3 { font-size: 19px; }
+  .layerCard { padding: 28px; display: grid; gap: 10px; align-content: start; }
+  .layerCard .n { font-size: 13px; font-weight: 600; color: var(--sky); }
+  .layerCard h3 { font-size: 21px; font-weight: 600; }
   .layerCard p { margin: 0; color: var(--muted); font-size: 15px; }
-  .layerCard ul { margin: 4px 0 0; padding-left: 18px; color: #c6d5ea; font-size: 14px; display: grid; gap: 4px; }
+  .layerCard ul { margin: 6px 0 0; padding-left: 18px; color: #c9d8ee; font-size: 14.5px; display: grid; gap: 5px; }
 
-  .flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin-top: 28px; border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
-  .flow div { padding: 20px; border-right: 1px solid var(--line); background: rgba(7,26,54,.5); }
-  .flow div:last-child { border-right: 0; }
-  .flow b { display: block; font-size: 15px; margin-bottom: 6px; }
-  .flow span { color: var(--muted); font-size: 14px; }
+  .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 16px; }
+  .step { padding: 22px; display: grid; gap: 10px; align-content: start; }
+  .step .ic { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: linear-gradient(160deg, #2d7dff, #1a4fc0); box-shadow: 0 6px 20px rgba(45,125,255,.35); }
+  .step .ic svg { width: 20px; height: 20px; }
+  .step b { font-size: 16px; } .step span { color: var(--muted); font-size: 14px; }
 
-  .preview { padding: 0; overflow: hidden; }
-  .pv-top { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; border-bottom: 1px solid var(--line); }
-  .pv-top b { font-size: 15px; }
-  .pv-row { display: grid; grid-template-columns: 6px 1.4fr .7fr 1fr 1fr 1.6fr; gap: 14px; align-items: center; padding: 12px 18px; border-bottom: 1px solid var(--line); font-size: 14px; }
+  .frame { padding: 10px; border-radius: 28px; }
+  .preview { border-radius: 20px; overflow: hidden; background: rgba(2,10,28,.72); border: 1px solid var(--line); }
+  .pv-top { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--line); }
+  .pv-top b { font-size: 16px; }
+  .pv-row { display: grid; grid-template-columns: 6px 1.5fr .7fr .8fr .8fr 1.7fr; gap: 14px; align-items: center; padding: 13px 20px; border-bottom: 1px solid var(--line); font-size: 14px; }
   .pv-row:last-child { border-bottom: 0; }
-  .pv-row.head { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+  .pv-row.head { color: var(--muted); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
   .stripe { width: 4px; height: 30px; border-radius: 3px; }
-  .chip { display: inline-block; font-size: 12px; padding: 3px 8px; border-radius: 999px; margin: 2px 4px 2px 0; border: 1px solid; }
-  .chip.hi { color: #ffb0aa; border-color: rgba(255,93,82,.5); background: rgba(255,93,82,.12); }
-  .chip.md { color: #ffd59a; border-color: rgba(255,181,71,.45); background: rgba(255,181,71,.1); }
-  .risk { font-family: var(--mono); font-weight: 500; }
+  .chip { display: inline-block; font-style: normal; font-size: 12px; padding: 3px 9px; border-radius: 999px; margin: 2px 4px 2px 0; border: 1px solid; }
+  .chip.hi { color: #ffb7b0; border-color: rgba(255,107,97,.45); background: rgba(255,107,97,.12); }
+  .chip.md { color: #ffdba3; border-color: rgba(255,190,92,.4); background: rgba(255,190,92,.1); }
+  .risk { font-weight: 600; }
 
   .refs { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
-  .ref { padding: 20px; display: grid; gap: 8px; }
-  .ref .k { font-family: var(--mono); font-size: 13px; color: var(--ember); }
-  .ref p { margin: 0; color: #c6d5ea; font-size: 15px; }
-  .ref a { font-size: 13px; color: var(--muted); }
+  .ref { padding: 24px; display: grid; gap: 8px; }
+  .ref .k { font-size: 22px; font-weight: 600; color: #fff; }
+  .ref p { margin: 0; color: #c3d3ea; font-size: 15px; }
+  .ref a { font-size: 13px; color: var(--sky); text-decoration: none; } .ref a:hover { text-decoration: underline; }
 
-  .timeline { position: relative; display: grid; gap: 0; }
-  .timeline::before { content: ""; position: absolute; left: 132px; top: 8px; bottom: 8px; width: 1px; background: linear-gradient(var(--blue), var(--ember)); opacity: .5; }
-  .tl { display: grid; grid-template-columns: 132px 1fr; gap: 28px; padding: 14px 0; }
-  .tl .d { font-family: var(--mono); font-size: 13px; color: var(--muted); text-align: right; padding-right: 0; position: relative; }
-  .tl .d::after { content: ""; position: absolute; right: -33px; top: 5px; width: 9px; height: 9px; border-radius: 50%; background: var(--ink); border: 2px solid var(--blue); }
-  .tl.key .d::after { border-color: var(--ember); background: var(--ember); box-shadow: 0 0 12px rgba(255,138,31,.7); }
-  .tl .c { padding-left: 14px; }
-  .tl .c b { font-size: 16px; display: block; }
-  .tl .c span { color: var(--muted); font-size: 14px; }
-  .tl .tag { display: block; width: max-content; margin-top: 6px; font-family: var(--mono); font-size: 12px; color: var(--ember); }
-  .yr { font-family: var(--display); font-size: 13px; color: var(--text); padding: 26px 0 6px; display: grid; grid-template-columns: 132px 1fr; gap: 28px; }
-  .yr span:first-child { text-align: right; }
+  .timeline { position: relative; display: grid; }
+  .timeline::before { content: ""; position: absolute; left: 120px; top: 8px; bottom: 8px; width: 1px; background: linear-gradient(var(--blue), var(--sky)); opacity: .45; }
+  .tl { display: grid; grid-template-columns: 120px 1fr; gap: 30px; padding: 13px 0; }
+  .tl .d { font-size: 14px; color: var(--muted); text-align: right; position: relative; font-variant-numeric: tabular-nums; }
+  .tl .d::after { content: ""; position: absolute; right: -35px; top: 6px; width: 9px; height: 9px; border-radius: 50%; background: var(--ink); border: 2px solid var(--blue); }
+  .tl.key .d::after { background: var(--sky); border-color: var(--sky); box-shadow: 0 0 12px rgba(124,196,255,.8); }
+  .tl .c { padding-left: 14px; } .tl .c b { font-size: 17px; font-weight: 600; display: block; } .tl .c span { color: var(--muted); font-size: 14.5px; }
+  .tl .tag { display: block; width: max-content; margin-top: 6px; font-size: 12.5px; font-weight: 600; color: var(--sky); padding: 2px 10px; border-radius: 999px; background: rgba(124,196,255,.1); }
+  .yr { font-size: 15px; font-weight: 600; padding: 28px 0 6px; display: grid; grid-template-columns: 120px 1fr; gap: 30px; } .yr span:first-child { text-align: right; }
 
-  .logos { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
-  .logos figure { margin: 0; background: var(--ink); display: grid; place-items: center; height: 116px; padding: 18px; }
-  .logos img { max-height: 54px; max-width: 120px; object-fit: contain; opacity: .78; transition: opacity .2s; }
-  .logos figure:hover img { opacity: 1; }
-  .logos figure.tall img { max-height: 70px; }
+  .partners { padding: 80px 0; background: linear-gradient(180deg, transparent, rgba(45,125,255,.14) 30%, rgba(45,125,255,.14) 70%, transparent); }
+  .logos { display: grid; grid-template-columns: repeat(7, 1fr); gap: 12px; }
+  .logos figure { min-width: 0; margin: 0; display: grid; place-items: center; height: 104px; padding: 18px; border-radius: 18px; background: rgba(255,255,255,.03); border: 1px solid var(--line); }
+  .logos img { max-height: 48px; max-width: 100%; object-fit: contain; opacity: .82; } .logos figure.tall img { max-height: 64px; }
 
-  .cta-band { padding: 56px; display: grid; grid-template-columns: 1.3fr 1fr; gap: 32px; align-items: center; }
-  .cta-band h2 { font-family: var(--display); font-size: clamp(22px, 2.6vw, 32px); font-weight: 400; line-height: 1.3; }
-  .cta-band p { color: var(--muted); margin: 10px 0 0; }
-  .cta-band .acts { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
-  footer { padding: 40px 0 56px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
-  footer .wrap { display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; align-items: center; }
-  footer img { height: 22px; }
+  .cta { padding: 56px; display: grid; grid-template-columns: 1.3fr auto; gap: 32px; align-items: center; overflow: hidden; position: relative; }
+  .cta::before { content: ""; position: absolute; inset: auto -10% -80% -10%; height: 140%; background: radial-gradient(50% 50% at 50% 50%, rgba(45,125,255,.35), transparent 70%); pointer-events: none; }
+  .cta h2 { font-size: clamp(26px, 3vw, 38px); font-weight: 600; } .cta p { color: #c3d3ea; margin: 10px 0 0; max-width: 56ch; }
+  footer { padding: 44px 0 56px; color: var(--muted); font-size: 13px; }
+  footer .wrap { display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; align-items: center; border-top: 1px solid var(--line); padding-top: 28px; }
+  footer img { height: 20px; }
 
   @media (max-width: 960px) {
-    .layersGrid, .refs { grid-template-columns: 1fr; }
-    .flow { grid-template-columns: 1fr 1fr; } .flow div:nth-child(2) { border-right: 0; } .flow div:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
+    .nav .links a:not(.btn) { display: none; }
+    .what { grid-template-columns: 1fr; padding: 28px; } .facts { border-left: 0; padding-left: 0; grid-template-columns: repeat(3, 1fr); }
+    .layersGrid, .refs { grid-template-columns: 1fr; } .steps { grid-template-columns: 1fr 1fr; }
     .logos { grid-template-columns: repeat(4, 1fr); }
-    .pv-row { grid-template-columns: 6px 1.4fr .7fr 1.6fr; } .pv-row > :nth-child(4), .pv-row > :nth-child(5) { display: none; }
-    .cta-band { grid-template-columns: 1fr; padding: 32px; } .cta-band .acts { justify-content: flex-start; }
-    .heroCard { display: none; }
+    .pv-row { grid-template-columns: 6px 1.5fr .7fr 1.6fr; } .pv-row > :nth-child(4), .pv-row > :nth-child(5) { display: none; }
+    .cta { grid-template-columns: 1fr; padding: 32px; }
   }
-  @media (max-width: 640px) {
-    .links a:not(.cta) { display: none; }
-    .word { font-size: 54px; } .w1 { top: 16%; } .w2 { top: 26%; } .lede { top: auto; bottom: 18%; right: 20px; }
-    .layers { bottom: 6%; }
-    .timeline::before { left: 84px; } .tl, .yr { grid-template-columns: 84px 1fr; gap: 20px; } .tl .d::after { right: -25px; }
-    .logos { grid-template-columns: repeat(2, 1fr); }
-    section { padding: 64px 0; }
+  @media (max-width: 600px) {
+    .hero { padding-top: 120px; min-height: 0; } .stage { height: 420px; } .seg button { padding: 7px 10px; font-size: 12px; } .layerNote { display: none; }
+    .facts { grid-template-columns: 1fr; } .facts b { font-size: 32px; } .steps { grid-template-columns: 1fr; }
+    .timeline::before { left: 76px; } .tl, .yr { grid-template-columns: 76px 1fr; gap: 22px; } .tl .d::after { right: -27px; }
+    .logos { grid-template-columns: repeat(2, 1fr); } section { padding: 72px 0; }
   }
 </style>
 </head>
 <body>
 <header class="nav">
   <div class="wrap">
-    <a href="index.html" aria-label="CortexAI home"><img src="assets/logos/cortexai.png" alt="CortexAI"></a>
-    <nav class="links glass" aria-label="Main">
-      <a href="#platform">Platform</a>
-      <a href="#science">Science</a>
-      <a href="#roadmap">Roadmap</a>
-      <a href="#recognition">Recognition</a>
-      <a class="cta" href="login.html">Clinician sign in</a>
-    </nav>
+    <div class="bar glass">
+      <a href="index.html" aria-label="CortexAI home"><img src="assets/logos/cortexai.png" alt="CortexAI"></a>
+      <nav class="links" aria-label="Main">
+        <a href="#how">How it works</a>
+        <a href="#science">Science</a>
+        <a href="#roadmap">Roadmap</a>
+        <a href="#partners">Partners</a>
+        <a class="btn btn-blue" href="login.html">Clinician sign in</a>
+      </nav>
+    </div>
   </div>
 </header>
 
 <div class="hero">
-  <canvas id="cv" aria-hidden="true"></canvas>
-  <div class="word w1" aria-hidden="true">Graft</div>
-  <div class="word w2" aria-hidden="true">Care</div>
-  <h1 class="lede">Clinical AI that estimates kidney transplant rejection risk by reading immunogenetics, drug exposure and graft-injury biomarkers together.</h1>
-  <div class="hot" id="hot"><span class="dot"></span><span class="lbl" id="hotLbl">Immunogenetics</span></div>
-  <div class="layers" role="group" aria-label="Signal layers">
-    <button aria-pressed="true" data-l="0" title="Immunogenetics">01</button>
-    <button aria-pressed="false" data-l="1" title="Drug exposure">02</button>
-    <button aria-pressed="false" data-l="2" title="Graft injury">03</button>
+  <div class="wrap" style="position:relative;z-index:3">
+    <span class="eyebrow">AI for transplant immunology</span>
+    <h1>Predict organ rejection before it happens</h1>
+    <p class="sub">CortexAI reads a recipient's genetics, immunosuppressant levels and graft-injury biomarkers together and estimates the risk of kidney transplant rejection over the next 12 months.</p>
+    <div class="ctas"><a class="btn btn-light" href="login.html">Open the clinician workspace</a><a class="btn" href="#how">How it works</a></div>
   </div>
-  <aside class="heroCard glass">
-    <div class="h"><span>CortexAI Clinic</span><img src="assets/logos/cortexai-mark.png" alt="" style="height:18px"></div>
-    <div class="k">Decision support for transplant nephrology</div>
-    <p id="layerText">HLA typing, class II eplet load and PIRCHE-II scores describe how foreign the graft looks to the recipient's immune system.</p>
-  </aside>
+  <div class="stage">
+    <canvas id="cv" aria-hidden="true"></canvas>
+    <div class="hot" id="hot"><span class="dot"></span><span class="lbl" id="hotLbl">Immunogenetics</span></div>
+    <p class="layerNote" id="layerText">HLA typing, class II eplet load and PIRCHE-II describe how foreign the graft looks to the recipient's immune system.</p>
+    <div class="seg glass" role="group" aria-label="Signal layers">
+      <button aria-pressed="true" data-l="0">Immunogenetics</button>
+      <button aria-pressed="false" data-l="1">Drug exposure</button>
+      <button aria-pressed="false" data-l="2">Graft injury</button>
+    </div>
+  </div>
 </div>
 
 <main>
-  <section id="platform">
+  <section style="padding-top:40px">
     <div class="wrap">
-      <div class="sec-h">
-        <span class="eyebrow">Platform</span>
+      <div class="what glass">
+        <div>
+          <span class="eyebrow">What we are doing</span>
+          <h2 style="font-size:clamp(28px,3.2vw,40px);font-weight:600;margin-top:10px;line-height:1.15">Rejection risk, read early and explained</h2>
+          <p>Rejection is the main threat to a transplanted kidney, and creatinine often rises only after damage has started. CortexAI combines the signals transplant teams already collect into one forward-looking risk, shows which factors drive it, and ranks the recipients who need attention first.</p>
+        </div>
+        <div class="facts">
+          <div><b class="num">12 mo</b><span>Forward risk horizon at every visit</span></div>
+          <div><b class="num">22</b><span>Genetic, immunological and clinical inputs</span></div>
+          <div><b>Every</b><span>Clinical decision recorded in an audit log</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="how" style="padding-top:24px">
+    <div class="wrap">
+      <div class="sec-h c">
+        <span class="eyebrow">How it works</span>
         <h2>Three signal layers, one risk the transplant team can act on</h2>
-        <p>Rejection rarely announces itself through one number. CortexAI keeps the immunological, pharmacological and injury picture of every recipient in one place and ranks who needs attention first.</p>
       </div>
       <div class="layersGrid">
-        <article class="layerCard glass">
-          <span class="n">01 · Immunogenetics</span>
-          <h3>How foreign is the graft</h3>
-          <p>Donor and recipient HLA at allele level, read as molecular mismatch rather than antigen counts.</p>
-          <ul><li>A, B, C, DRB1, DQB1 typing side by side</li><li>Class II eplet mismatch and PIRCHE-II</li><li>cPRA and preformed DSA</li></ul>
-        </article>
-        <article class="layerCard glass">
-          <span class="n">02 · Drug exposure</span>
-          <h3>Is immunosuppression holding</h3>
-          <p>Tacrolimus troughs against the target corridor for that post-transplant phase.</p>
-          <ul><li>Time in therapeutic range</li><li>Intrapatient variability (CV)</li><li>Under-exposure flags</li></ul>
-        </article>
-        <article class="layerCard glass">
-          <span class="n">03 · Graft injury</span>
-          <h3>Is the graft being hurt now</h3>
-          <p>Non-invasive markers that move before, or alongside, creatinine.</p>
-          <ul><li>dd-cfDNA fraction trend</li><li>De novo DSA and MFI trajectory</li><li>eGFR slope, UPCR, BK viremia, Banff biopsies</li></ul>
-        </article>
+        <article class="layerCard glass"><span class="n">Immunogenetics</span><h3>How foreign is the graft</h3><p>Donor and recipient HLA at allele level, read as molecular mismatch rather than antigen counts.</p><ul><li>A, B, C, DRB1, DQB1 side by side</li><li>Class II eplet mismatch, PIRCHE-II</li><li>cPRA, preformed and de novo DSA by locus</li></ul></article>
+        <article class="layerCard glass"><span class="n">Drug exposure</span><h3>Is immunosuppression holding</h3><p>Tacrolimus troughs against the target corridor for each post-transplant phase.</p><ul><li>Time in therapeutic range</li><li>Intrapatient variability, stable phase</li><li>Under-exposure flags</li></ul></article>
+        <article class="layerCard glass"><span class="n">Graft injury</span><h3>Is the graft being hurt now</h3><p>Non-invasive markers that move before, or alongside, creatinine.</p><ul><li>dd-cfDNA fraction trend</li><li>eGFR (CKD-EPI 2021) slope, UPCR</li><li>BK viremia, Banff biopsy history</li></ul></article>
       </div>
-      <div class="flow" aria-label="How a review works">
-        <div><b>1 · Ingest</b><span>Labs, HLA typing and biopsy reports per visit.</span></div>
-        <div><b>2 · Score</b><span>12-month rejection risk with the factors behind it.</span></div>
-        <div><b>3 · Triage</b><span>Worklist ordered by alerts and risk, thresholds set by the centre.</span></div>
-        <div><b>4 · Decide</b><span>Clinician records the decision. Every action lands in the audit log.</span></div>
+      <div class="steps">
+        <div class="step glass"><span class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="#fff" stroke-width="1.6"><path d="M4 3h8l4 4v10H4z"/><path d="M12 3v4h4M7 11h6M7 14h4"/></svg></span><b>1. Ingest</b><span>Labs, HLA typing and biopsy reports at each visit.</span></div>
+        <div class="step glass"><span class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="#fff" stroke-width="1.6"><path d="M3 15l4-5 3 3 4-6 3 4"/></svg></span><b>2. Predict</b><span>12-month rejection risk and the factors behind it.</span></div>
+        <div class="step glass"><span class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="#fff" stroke-width="1.6"><path d="M4 5h12M4 10h8M4 15h5"/></svg></span><b>3. Triage</b><span>Worklist ordered by signals and risk, with centre-set thresholds.</span></div>
+        <div class="step glass"><span class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="#fff" stroke-width="1.6"><path d="M4 10l4 4 8-8"/></svg></span><b>4. Decide</b><span>The clinician records the decision; every action is audited.</span></div>
       </div>
     </div>
   </section>
 
   <section style="padding-top:0">
     <div class="wrap">
-      <div class="preview glass" role="img" aria-label="Example worklist from the synthetic demo cohort">
-        <div class="pv-top"><b>Today's worklist</b><span class="disclaimer">Synthetic demo cohort</span></div>
-        <div class="pv-row head"><span></span><span>Recipient</span><span>Risk 12 mo</span><span>dd-cfDNA</span><span>DSA MFI</span><span>Signals</span></div>
-        <div class="pv-row"><span class="stripe" style="background:var(--crit)"></span><span>CX-1040 · M 54 · 4 mo</span><span class="risk" style="color:#ff9d94">49%</span><span class="num">1.31%</span><span class="num">—</span><span><i class="chip hi">dd-cfDNA ≥ 1%</i><i class="chip hi">eGFR decline</i><i class="chip md">Proteinuria</i></span></div>
-        <div class="pv-row"><span class="stripe" style="background:var(--crit)"></span><span>CX-1047 · M 58 · 3 mo</span><span class="risk" style="color:#ff9d94">55%</span><span class="num">0.57%</span><span class="num">1,770</span><span><i class="chip hi">De novo DSA</i></span></div>
-        <div class="pv-row"><span class="stripe" style="background:var(--crit)"></span><span>CX-1089 · M 32 · 4 mo</span><span class="risk" style="color:#9fe9c8">8%</span><span class="num">2.08%</span><span class="num">—</span><span><i class="chip hi">dd-cfDNA ≥ 1%</i><i class="chip hi">eGFR decline</i></span></div>
-        <div class="pv-row"><span class="stripe" style="background:var(--ok)"></span><span>CX-1208 · M 49 · 8 mo</span><span class="risk" style="color:#9fe9c8">6%</span><span class="num">0.40%</span><span class="num">—</span><span class="disclaimer">No signals</span></div>
+      <div class="frame glass" role="img" aria-label="Example worklist from the synthetic demo cohort">
+        <div class="preview">
+          <div class="pv-top"><b>Today's worklist</b><span class="disclaimer">Synthetic demo cohort</span></div>
+          <div class="pv-row head"><span></span><span>Recipient</span><span>Risk 12 mo</span><span>dd-cfDNA</span><span>DSA MFI</span><span>Signals</span></div>
+          <div id="pvRows"></div>
+        </div>
       </div>
     </div>
   </section>
@@ -210,45 +209,36 @@
       <div class="sec-h">
         <span class="eyebrow">Clinical basis</span>
         <h2>Built on markers transplant centres already use</h2>
-        <p>Default alert thresholds come from published work and every centre can tune them. The model is trained on a synthetic cohort today and needs prospective validation on real recipients before clinical use.</p>
+        <p>Default thresholds come from published work, and every centre can tune them. Today the model is trained on a synthetic cohort; it needs validation on real recipients before clinical use.</p>
       </div>
       <div class="refs">
-        <article class="ref glass"><span class="k">dd-cfDNA ≥ 1%</span><p>The fraction of donor-derived cell-free DNA most often used to separate normal from abnormal results, with high negative predictive value for rejection.</p><a href="https://www.frontiersin.org/journals/transplant-international/articles/10.3389/ti.2022.10448/full">Kant &amp; Brennan, Transplant International 2022</a></article>
-        <article class="ref glass"><span class="k">DSA MFI ≥ 1,400</span><p>The binary donor-specific antibody cut-off inside the iBox prognostication system, which combines eGFR, proteinuria, DSA and Banff lesions.</p><a href="https://doi.org/10.1136/bmj.l4923">Loupy et al., BMJ 2019</a></article>
+        <article class="ref glass"><span class="k">dd-cfDNA ≥ 1%</span><p>The donor-derived cell-free DNA fraction most often used to separate normal from abnormal, with high negative predictive value for rejection.</p><a href="https://www.frontiersin.org/journals/transplant-international/articles/10.3389/ti.2022.10448/full">Kant &amp; Brennan, Transplant International 2022</a></article>
+        <article class="ref glass"><span class="k">DSA MFI ≥ 1,400</span><p>The donor-specific antibody cut-off inside the iBox prognostication system, which combines eGFR, proteinuria, DSA and Banff lesions.</p><a href="https://doi.org/10.1136/bmj.l4923">Loupy et al., BMJ 2019</a></article>
         <article class="ref glass"><span class="k">Class II eplets ≥ 14</span><p>Living-donor recipients above this load developed de novo class II DSA far more often (20.2% vs 3.4%).</p><a href="https://www.frontiersin.org/journals/immunology/articles/10.3389/fimmu.2020.02000/full">Sakamoto et al., Frontiers in Immunology 2020</a></article>
         <article class="ref glass"><span class="k">Tacrolimus CV &gt; 30%</span><p>High intrapatient variability and time below range are associated with rejection and graft loss; published cut-offs span roughly 23–40%.</p><a href="https://www.frontiersin.org/journals/immunology/articles/10.3389/fimmu.2026.1739104/full">Benning et al., Frontiers in Immunology 2026</a></article>
       </div>
     </div>
   </section>
 
-  <section id="roadmap">
+  <section id="roadmap" style="padding-top:24px">
     <div class="wrap">
-      <div class="sec-h">
-        <span class="eyebrow">Roadmap</span>
-        <h2>From a lung-cancer prototype to transplant immunology</h2>
-      </div>
+      <div class="sec-h"><span class="eyebrow">Roadmap</span><h2>From a lung-cancer prototype to transplant immunology</h2></div>
       <div class="timeline" id="tl"></div>
     </div>
   </section>
 
-  <section id="recognition" style="padding-top:24px">
+  <section id="partners" class="partners">
     <div class="wrap">
-      <div class="sec-h"><span class="eyebrow">Recognized and supported by</span></div>
+      <div class="sec-h c"><span class="eyebrow">Recognized and supported by</span><h2>Our partners</h2></div>
       <div class="logos" id="logos"></div>
     </div>
   </section>
 
-  <section style="padding-top:0">
+  <section>
     <div class="wrap">
-      <div class="cta-band glass">
-        <div>
-          <h2>Running a transplant programme?</h2>
-          <p>We are looking for centres to validate CortexAI on retrospective and prospective cohorts. Clinician accounts are issued per centre.</p>
-        </div>
-        <div class="acts">
-          <a class="btn btn-ember" href="login.html">Clinician sign in</a>
-          <a class="btn" href="https://cortexos.it.com">cortexos.it.com</a>
-        </div>
+      <div class="cta glass">
+        <div><h2>Calling transplant centres</h2><p>We are looking for programmes to validate CortexAI on retrospective and prospective cohorts. Clinician accounts are issued per centre.</p></div>
+        <a class="btn btn-blue" href="login.html" style="position:relative">Clinician sign in</a>
       </div>
     </div>
   </section>
@@ -264,25 +254,36 @@
 <script src="assets/js/kidney.js"></script>
 <script>
   const TEXT = [
-    "HLA typing, class II eplet load and PIRCHE-II scores describe how foreign the graft looks to the recipient's immune system.",
-    "Tacrolimus troughs, time in range and intrapatient variability show whether immunosuppression is actually holding.",
+    "HLA typing, class II eplet load and PIRCHE-II describe how foreign the graft looks to the recipient's immune system.",
+    "Tacrolimus troughs, time in range and stable-phase variability show whether immunosuppression is actually holding.",
     "dd-cfDNA, DSA trajectory, eGFR slope and proteinuria show whether the graft is being injured right now.",
   ];
   const hot = document.getElementById("hot"), hotLbl = document.getElementById("hotLbl");
-  const k = KidneyCloud(document.getElementById("cv"), { widthFrac: 0.3, cy: 0.5,
+  const k = KidneyCloud(document.getElementById("cv"), { widthFrac: 0.2, cy: 0.4,
     onHotspot([x, y], label) { hot.style.left = x + "px"; hot.style.top = y + "px"; hotLbl.textContent = label; } });
-  const btns = document.querySelectorAll(".layers button");
+  const btns = document.querySelectorAll(".seg button");
   btns.forEach(b => b.addEventListener("click", () => {
     btns.forEach(x => x.setAttribute("aria-pressed", x === b)); k.setLayer(+b.dataset.l);
     document.getElementById("layerText").textContent = TEXT[+b.dataset.l];
   }));
   let li = 0; const auto = setInterval(() => { li = (li + 1) % 3; btns[li].click(); }, 5000);
-  document.querySelector(".layers").addEventListener("pointerdown", () => clearInterval(auto));
+  document.querySelector(".seg").addEventListener("pointerdown", () => clearInterval(auto));
+
+  // live preview rows from the demo cohort
+  fetch("assets/demo-data.json").then(r => r.json()).then(d => {
+    const rows = d.patients.map(({ patient: p, summary: s }) => ({ p, s, v: p.visits[p.visits.length - 1] }))
+      .sort((a, b) => (b.s.alerts.filter(x => x.severity === "high").length - a.s.alerts.filter(x => x.severity === "high").length) || b.s.risk_12m - a.s.risk_12m);
+    const pick = rows.slice(0, 3).concat(rows.filter(r => !r.s.alerts.length && r.s.band === "low").slice(0, 1));
+    const col = b => ({ high: "#ff8f86", moderate: "#ffd08a", low: "#8fe6c3" })[b];
+    document.getElementById("pvRows").innerHTML = pick.map(({ p, s, v }) => {
+      const sev = s.alerts.some(a => a.severity === "high") ? "var(--crit)" : s.alerts.length ? "var(--warn)" : "var(--ok)";
+      const chips = s.alerts.filter(a => a.code !== "risk_high").slice(0, 3).map(a => `<i class="chip ${a.severity === "high" ? "hi" : "md"}">${a.title}</i>`).join("") || '<span class="disclaimer">No signals</span>';
+      return `<div class="pv-row"><span class="stripe" style="background:${sev}"></span><span>${p.id} · ${p.sex} ${p.age} · ${p.follow_up_months} mo</span><span class="risk num" style="color:${col(s.band)}">${Math.round(s.risk_12m * 100)}%</span><span class="num">${v.ddcfdna.toFixed(2)}%</span><span class="num">${v.dsa_mfi_max ? v.dsa_mfi_max.toLocaleString("en-US") : "—"}</span><span>${chips}</span></div>`;
+    }).join("");
+  }).catch(() => { document.getElementById("pvRows").innerHTML = '<div class="pv-row"><span></span><span class="disclaimer">Preview data unavailable.</span></div>'; });
 
   const ROADMAP = [
-    ["2024", [
-      ["Dec 2024", "CortexAI founded by Assylzhan Abdullayev", "First prototype: a clinical AI agent for early lung-cancer detection.", 1],
-    ]],
+    ["2024", [["Dec 2024", "CortexAI founded by Assylzhan Abdullayev", "First prototype: a clinical AI agent for early lung-cancer detection.", 1]]],
     ["2025", [
       ["Apr 2025", "Presented to the Ministry of Digital Technologies of Uzbekistan", "Nominated and invited to present the prototype."],
       ["May 2025", "Startup of the Year, Astana IT University", "Recognized by one of the leading IT universities in Eurasia."],
@@ -305,16 +306,14 @@
       ["Nov 2026", "CortexAI joins Constructor START", "Next stage of company building.", 1],
     ]],
   ];
-  const tl = document.getElementById("tl");
-  tl.innerHTML = ROADMAP.map(([y, items]) => `<div class="yr"><span>${y}</span><span></span></div>` + items.map(([d, t, s, key, money]) =>
-    `<div class="tl${key ? " key" : ""}"><div class="d">${d}</div><div class="c"><b>${t}</b><span>${s}</span>${money ? `<div class="tag">${money}</div>` : ""}</div></div>`).join("")).join("");
+  document.getElementById("tl").innerHTML = ROADMAP.map(([y, items]) => `<div class="yr"><span>${y}</span><span></span></div>` + items.map(([d, t, s, key, money]) =>
+    `<div class="tl${key ? " key" : ""}"><div class="d">${d}</div><div class="c"><b>${t}</b><span>${s}</span>${money ? `<span class="tag">${money}</span>` : ""}</div></div>`).join("")).join("");
 
-  const LOGOS = [["constructor","Constructor"],["draper","Draper University"],["techcrunch","TechCrunch"],["openai-startups","OpenAI for Startups"],
-    ["starbucks-foundation","The Starbucks Foundation"],["kaist","KAIST"],["ewc","Entrepreneurship World Cup",1],["s-tron","S-TRON",1],
-    ["domino","Domino Ventures"],["digital-qazaqstan","Digital Qazaqstan"],["jas-kenes","Jas Kenes"],["ministry-science-kz","Ministry of Science and Higher Education of Kazakhstan",1],
-    ["kyrgyz-republic","Government of the Kyrgyz Republic",1],["people-project","The People Project"]];
-  document.getElementById("logos").innerHTML = LOGOS.map(([f, n, tall]) =>
-    `<figure class="${tall ? "tall" : ""}"><img src="assets/logos/${f}.png" alt="${n}" title="${n}"></figure>`).join("");
+  const LOGOS = [["constructor", "Constructor"], ["draper", "Draper University"], ["techcrunch", "TechCrunch"], ["openai-startups", "OpenAI for Startups"],
+    ["starbucks-foundation", "The Starbucks Foundation"], ["kaist", "KAIST"], ["ewc", "Entrepreneurship World Cup", 1], ["s-tron", "S-TRON", 1],
+    ["domino", "Domino Ventures"], ["digital-qazaqstan", "Digital Qazaqstan"], ["jas-kenes", "Jas Kenes"], ["ministry-science-kz", "Ministry of Science and Higher Education of Kazakhstan", 1],
+    ["kyrgyz-republic", "Government of the Kyrgyz Republic", 1], ["people-project", "The People Project"]];
+  document.getElementById("logos").innerHTML = LOGOS.map(([f, n, tall]) => `<figure class="${tall ? "tall" : ""}"><img src="assets/logos/${f}.png" alt="${n}" title="${n}"></figure>`).join("");
 </script>
 </body>
 </html>

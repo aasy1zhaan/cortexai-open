@@ -1,50 +1,53 @@
-/* CortexAI Open — one visual world: deep clinical navy, brand blue, ember orange for risk. */
+/* CortexAI — one visual world: deep clinical navy, soft blue glow, glass surfaces, Apple-style type. */
 :root {
-  --ink: #030c1a;          /* page background */
-  --navy: #071a36;         /* raised surfaces */
-  --navy-2: #0c2549;       /* hover / inputs */
-  --line: rgba(140, 175, 220, 0.16);
-  --text: #e9f0fa;
-  --muted: #8ea3c0;
-  --blue: #0d8ffd;         /* CortexAI brand */
-  --ember: #ff8a1f;        /* risk / heat accent */
-  --crit: #ff5d52;
-  --warn: #ffb547;
-  --ok: #3fd69b;
-  --display: "Michroma", "Eurostile", "Arial Black", sans-serif;
-  --body: "Manrope", "Segoe UI", system-ui, sans-serif;
-  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
-  --r: 14px;
+  --ink: #020a1c;          /* page background */
+  --navy: #071834;         /* raised surface */
+  --navy-2: #0b2147;
+  --line: rgba(150, 185, 235, 0.14);
+  --text: #eef3fb;
+  --muted: #93a6c4;
+  --blue: #2d7dff;         /* primary action */
+  --sky: #7cc4ff;          /* glow / data */
+  --brand: #0d8ffd;        /* CortexAI logo blue */
+  --ember: #ff9a5c;        /* risk heat */
+  --crit: #ff6b61;
+  --warn: #ffbe5c;
+  --ok: #4fd8a4;
+  --sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", "Helvetica Neue", Arial, sans-serif;
+  --mono: "SF Mono", ui-monospace, Menlo, "JetBrains Mono", monospace;
+  --r: 20px;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
-html, body { margin: 0; background: var(--ink); color: var(--text); font-family: var(--body); }
-body { -webkit-font-smoothing: antialiased; line-height: 1.5; }
+html, body { margin: 0; background: var(--ink); color: var(--text); font-family: var(--sans); }
+body { -webkit-font-smoothing: antialiased; line-height: 1.5; letter-spacing: -0.005em; }
 a { color: inherit; }
 img { max-width: 100%; }
-h1, h2, h3 { text-wrap: balance; margin: 0; }
+h1, h2, h3 { text-wrap: balance; margin: 0; letter-spacing: -0.02em; }
 button, input, select, textarea { font: inherit; color: inherit; }
-:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
-.mono, .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+:focus-visible { outline: 2px solid var(--sky); outline-offset: 2px; }
+.num { font-variant-numeric: tabular-nums; }
+.mono { font-family: var(--mono); font-size: .92em; }
 
 .btn {
-  display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line);
-  background: rgba(255,255,255,0.04); padding: 10px 16px; border-radius: 10px;
-  cursor: pointer; text-decoration: none; font-weight: 600; font-size: 14px; transition: background .15s, border-color .15s;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid var(--line);
+  background: rgba(255,255,255,0.05); padding: 10px 18px; border-radius: 999px;
+  cursor: pointer; text-decoration: none; font-weight: 600; font-size: 14px; transition: background .15s, border-color .15s, box-shadow .15s;
 }
-.btn:hover { background: rgba(255,255,255,0.08); border-color: rgba(160,190,230,0.3); }
-.btn-ember { background: var(--ember); color: #1a0d00; border-color: transparent; }
-.btn-ember:hover { background: #ff9d43; }
-.btn-blue { background: var(--blue); color: #fff; border-color: transparent; }
-.btn-blue:hover { background: #2a9dff; }
+.btn:hover { background: rgba(255,255,255,0.09); border-color: rgba(170,200,240,0.3); }
+.btn-blue { background: linear-gradient(180deg, #3d8bff, #1f63f0); color: #fff; border-color: rgba(255,255,255,.12);
+  box-shadow: 0 6px 24px rgba(45,125,255,.35), inset 0 1px 0 rgba(255,255,255,.25); }
+.btn-blue:hover { background: linear-gradient(180deg, #519aff, #2a6ff7); }
+.btn-light { background: #fff; color: #061230; border-color: transparent; }
+.btn-light:hover { background: #e9f1ff; }
 .btn:disabled { opacity: .45; cursor: not-allowed; }
 
 .glass {
-  background: linear-gradient(160deg, rgba(14, 40, 78, 0.72), rgba(6, 20, 42, 0.78));
+  background: linear-gradient(160deg, rgba(30, 64, 120, 0.42), rgba(10, 28, 60, 0.55));
   border: 1px solid var(--line); border-radius: var(--r);
-  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(18px) saturate(140%); -webkit-backdrop-filter: blur(18px) saturate(140%);
 }
-.eyebrow { font-family: var(--display); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
 .disclaimer { font-size: 12px; color: var(--muted); }
 
 @media (prefers-reduced-motion: reduce) {

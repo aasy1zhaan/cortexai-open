@@ -2,3 +2,5 @@ model/*.joblib
 *.db
 __pycache__/
 data/
+ml/model/*.joblib
+test_api.db

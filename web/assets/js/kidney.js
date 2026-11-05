@@ -84,27 +84,26 @@
         const depth = (1 - z2) * 0.5;                  // 0 back .. 1 front
         const heat = p.k < 2 ? (p.h[0] * layerMix[0] + p.h[1] * layerMix[1] + p.h[2] * layerMix[2]) * pulse : 0;
         let rC, gC, bC, a;
-        if (p.k === 2) { rC = 255; gC = 120; bC = 60; a = 0.35 + 0.3 * depth; }
+        if (p.k === 2) { rC = 255; gC = 140; bC = 110; a = 0.3 + 0.3 * depth; }
         else if (p.k === 3) { rC = 60; gC = 150; bC = 255; a = 0.35 + 0.3 * depth; }
         else if (p.k === 4) { rC = 150; gC = 200; bC = 255; a = 0.25 + 0.25 * depth; }
         else if (p.k === 1) {
           // inner medulla glows like embers through the cortex shell
-          const h2 = Math.min(1, 0.45 + heat);
-          rC = 255; gC = 105 + 50 * h2; bC = 25; a = 0.22 + 0.6 * heat + 0.15 * depth;
+          rC = 90 + 165 * heat; gC = 170 - 10 * heat; bC = 255 - 170 * heat; a = 0.16 + 0.6 * heat + 0.12 * depth;
         } else {
           const base = 0.42 + 0.5 * depth;
-          rC = 40 + 215 * heat; gC = 140 + 0 * heat; bC = 255 - 215 * heat; a = Math.min(1, base + heat * 0.6);
+          rC = 45 + 210 * heat; gC = 125 + 30 * heat; bC = 255 - 165 * heat; a = Math.min(1, base + heat * 0.6);
         }
         ctx.fillStyle = `rgba(${rC | 0},${gC | 0},${bC | 0},${a.toFixed(3)})`;
         const sz = p.s * persp * (1 + heat * 2.2) * (W < 600 ? 0.8 : 1) * (W > 1200 ? 1.25 : 1);
-        ctx.fillRect(sx, sy, sz, sz);
+        if (sz > 2.2) { ctx.beginPath(); ctx.arc(sx, sy, sz / 2, 0, 6.283); ctx.fill(); } else ctx.fillRect(sx, sy, sz, sz);
         if (p.k === 0 && p.h[layer] > best && z2 < -0.05) { best = p.h[layer]; hotScreen = [sx, sy]; }
       }
       // embers
       for (const e of embers) {
         if (!reduce) { e.y -= e.v; e.x += Math.sin(t * 0.6 + e.o * 10) * 0.0003; if (e.y < -0.02) { e.y = 1.02; e.x = Math.random(); } }
         const fl = 0.35 + 0.35 * Math.sin(t * 3 + e.o * 20);
-        ctx.fillStyle = `rgba(255,${130 + (e.o * 60) | 0},40,${fl.toFixed(3)})`;
+        ctx.fillStyle = e.o > 0.7 ? `rgba(255,170,120,${(fl * 0.8).toFixed(3)})` : `rgba(140,200,255,${fl.toFixed(3)})`;
         ctx.beginPath(); ctx.arc(e.x * W, e.y * H, e.s, 0, 7); ctx.fill();
       }
       ctx.globalCompositeOperation = "source-over";

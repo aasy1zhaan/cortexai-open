@@ -18,7 +18,7 @@ def demo_cohort(n: int = 40, seed: int = 2026) -> list[dict]:
 
     rng = np.random.default_rng(seed)
     pool = []
-    for i in range(320):
+    for i in range(360):
         p = simulate_patient(rng, "", follow_up_months=float(rng.choice(FU)))
         for v in p["visits"]:
             v.pop("_event", None)
@@ -30,7 +30,17 @@ def demo_cohort(n: int = 40, seed: int = 2026) -> list[dict]:
     moderate = [x for x in pool if x[1]["band"] == "moderate" and x not in signal]
     low = [x for x in pool if x[1]["band"] == "low" and not x[1]["alerts"]]
     rest = [x for x in pool if x not in high + signal + moderate + low]
-    pick = high[:4] + signal[:5] + moderate[:9] + rest[:6] + low[: n - 24]
+    # one example of each signal type so every screen state is visible
+    showcase = []
+    for code in ("ddcfdna", "egfr_drop", "bk", "tac_cv", "tac_low", "upcr"):
+        for x in pool:
+            if x not in showcase and any(a["code"] == code for a in x[1]["alerts"]):
+                showcase.append(x)
+                break
+    taken = lambda lst, k: [x for x in lst if x not in showcase][:k]  # noqa: E731
+    pick = showcase + taken(high, 4) + taken(signal, 4) + taken(moderate, 8)
+    pick += [x for x in rest if x not in pick][:4]
+    pick += [x for x in low if x not in pick][: n - len(pick)]
     out = []
     for i, (p, _) in enumerate(pick[:n]):
         p["id"] = f"CX-{1040 + i * 7:04d}"

@@ -10,7 +10,34 @@
   const BAND = { high: ["High", "var(--crit)"], moderate: ["Moderate", "var(--warn)"], low: ["Low", "var(--ok)"] };
   const DECISIONS = { reviewed: "Reviewed, no change", repeat_tests: "Repeat tests ordered", biopsy_requested: "For-cause biopsy requested", escalate: "Escalated to MDT", no_action: "No action needed" };
   const LOCI = ["A", "B", "C", "DRB1", "DQB1"];
-  const S = { user: null, wl: null, filter: "all", q: "" };
+  const S = { user: null, wl: null, filter: "all", q: "", unit: (() => { try { return localStorage.getItem("cx_unit") || "umol"; } catch { return "umol"; } })() };
+  const crea = v => v == null ? null : S.unit === "umol" ? (v.creatinine_umol ?? Math.round(v.creatinine * 88.42)) : v.creatinine;
+  const creaUnit = () => S.unit === "umol" ? "µmol/L" : "mg/dL";
+  const creaFmt = v => v == null ? "—" : S.unit === "umol" ? n0(crea(v)) : n2(crea(v));
+
+  // lab tile in the style of a results card: big value, change vs previous, last values as dots against a reference line
+  function labTile({ title, value, unit, prev, lowerIsBetter, ref, flag, values, status, warn, fmt }) {
+    const c = flag ? "var(--crit)" : warn ? "var(--warn)" : "var(--sky)";
+    let delta = "";
+    if (prev != null && value != null && typeof value === "number") {
+      const d = value - prev, rel = prev ? Math.abs(d / prev) : 0;
+      const worse = lowerIsBetter === undefined ? null : (lowerIsBetter ? d > 0 : d < 0);
+      const cls = rel < 0.03 ? "flat" : worse === null ? "flat" : worse ? "bad" : "good";
+      const shown = Math.abs(d) >= 100 ? n0(Math.abs(d)) : Math.abs(d) >= 10 ? n1(Math.abs(d)) : n2(Math.abs(d));
+      delta = `<span class="ld ${cls}">${d >= 0 ? "+" : "−"}${shown} vs previous</span>`;
+    }
+    const vals = (values || []).filter(x => x != null).slice(-6);
+    let svg = "";
+    if (vals.length) {
+      const all = ref != null ? vals.concat([ref]) : vals, mn = Math.min(...all), mx = Math.max(...all), r = (mx - mn) || 1;
+      const Y = v => 38 - (v - mn) / r * 30, X = i => 8 + i * (144 / Math.max(vals.length - 1, 1));
+      svg = `<svg viewBox="0 0 160 44" aria-hidden="true">${ref != null ? `<line x1="0" x2="160" y1="${Y(ref)}" y2="${Y(ref)}" stroke="rgba(200,220,255,.35)" stroke-dasharray="3 3"/>` : ""}`
+        + vals.map((v, i) => { const last = i === vals.length - 1, hot = ref != null && (lowerIsBetter === false ? v < ref : v >= ref);
+          return last ? `<circle cx="${X(i)}" cy="${Y(v)}" r="5.5" fill="none" stroke="${hot ? "#ff8f86" : "#fff"}" stroke-width="1.5"/><circle cx="${X(i)}" cy="${Y(v)}" r="2.6" fill="${hot ? "#ff8f86" : "#fff"}"/>`
+            : `<circle cx="${X(i)}" cy="${Y(v)}" r="2.6" fill="${hot ? "#ff8f86" : "rgba(220,232,255,.75)"}"/>`; }).join("") + "</svg>";
+    }
+    return `<div class="lab" style="--c:${c}"><div class="lt"><i></i>${title}</div><div class="lv"><b class="num">${value == null ? "—" : fmt ? fmt(value) : typeof value === "number" ? (Math.abs(value) >= 100 ? n0(value) : value % 1 ? (+value).toFixed(value < 10 ? 2 : 1) : value) : esc(value)}</b><small>${unit || ""}</small></div>${delta}${svg}<div class="ls">${esc(status || "")}</div></div>`;
+  }
 
   const view = $("#view");
   function setTitle(t, crumb) { $("#title").textContent = t; $("#crumb").innerHTML = crumb || ""; document.title = `${t} · CortexAI Clinic`; }
@@ -61,7 +88,8 @@
         const sev = p.alerts.some(a => a.severity === "high") ? "var(--crit)" : p.alerts.length ? "var(--warn)" : "var(--ok)";
         const [bl, bc] = BAND[p.band];
         const d = p.risk_delta, arrow = Math.abs(d) < 0.01 ? "" : `<span class="delta ${d > 0 ? "up" : "down"}">${d > 0 ? "▲" : "▼"} ${Math.abs(d * 100).toFixed(0)}</span>`;
-        const chips = p.alerts.filter(a => a.code !== "risk_high").slice(0, 3).map(a => `<span class="chip ${a.severity === "high" ? "hi" : "md"}">${esc(a.title)}</span>`).join("") + (p.alerts.length > 3 ? `<span class="more">+${p.alerts.length - 3}</span>` : "");
+        const shown = p.alerts.length > 1 ? p.alerts.filter(a => a.code !== "risk_high") : p.alerts;
+        const chips = shown.slice(0, 3).map(a => `<span class="chip ${a.severity === "high" ? "hi" : "md"}">${esc(a.title)}</span>`).join("") + (shown.length > 3 ? `<span class="more">+${shown.length - 3}</span>` : "");
         return `<tr tabindex="0" data-id="${esc(p.id)}">
           <td><span class="sev" style="background:${sev}"></span></td>
           <td><b>${esc(p.name)}</b><div class="sub mono">${esc(p.id)} · ${p.sex} ${p.age}</div></td>
@@ -97,15 +125,15 @@
     const tacBands = [{ x0: 0, x1: 3, y0: 8, y1: 12 }, { x0: 3, x1: 999, y0: 5, y1: 8 }];
     const charts = [
       ["eGFR", "mL/min/1.73m²", `${n0(last.egfr)} · ${last.egfr_change_3m > 0 ? "+" : ""}${n0(last.egfr_change_3m)}% vs 3 mo`, CXChart({ series: series("egfr", "var(--blue)", v => v.egfr_change_3m <= -th.egfr_drop_pct), events, aria: "eGFR trend" })],
-      ["Tacrolimus trough", "ng/mL · shaded = target", `CV ${n0(last.tac_cv)}% · TTR ${n0(last.tac_ttr)}%`, CXChart({ series: series("tac_trough", "#b48bff", v => v.tac_trough < v.tac_target_low), bands: tacBands, aria: "Tacrolimus trough trend" })],
+      ["Tacrolimus trough", "ng/mL · shaded = target", `CV ${last.tac_cv == null ? "—" : n0(last.tac_cv) + "%"} · TTR ${n0(last.tac_ttr)}%`, CXChart({ series: series("tac_trough", "#b48bff", v => v.tac_trough < v.tac_target_low), bands: tacBands, aria: "Tacrolimus trough trend" })],
       ["dd-cfDNA", "% of total cfDNA", `${n2(last.ddcfdna)}%`, CXChart({ series: series("ddcfdna", "var(--ember)", v => v.ddcfdna >= th.ddcfdna_pct), thresholds: [{ y: th.ddcfdna_pct, label: `${th.ddcfdna_pct}%` }], events, yUnit: "%", aria: "dd-cfDNA trend" })],
-      ["DSA, immunodominant MFI", "Single-antigen beads", last.dsa_mfi_max ? n0(last.dsa_mfi_max) : "Negative", CXChart({ series: series("dsa_mfi_max", "#5ad1ff", v => v.dsa_mfi_max >= th.dsa_mfi), thresholds: [{ y: th.dsa_mfi, label: `MFI ${n0(th.dsa_mfi)}` }], aria: "DSA MFI trend" })],
+      ["DSA, immunodominant MFI", (last.dsa && last.dsa[0]) ? `anti-${last.dsa[0].spec} · class ${last.dsa[0].class}` : "Single-antigen beads", last.dsa_mfi_max ? n0(last.dsa_mfi_max) : "Negative", CXChart({ series: series("dsa_mfi_max", "#5ad1ff", v => v.dsa_mfi_max >= th.dsa_mfi), thresholds: [{ y: th.dsa_mfi, label: `MFI ${n0(th.dsa_mfi)}` }], aria: "DSA MFI trend" })],
       ["Proteinuria", "UPCR g/g", n2(last.upcr), CXChart({ series: series("upcr", "#ffd166", v => v.upcr >= th.upcr_g_g), thresholds: [{ y: th.upcr_g_g, label: `${th.upcr_g_g} g/g` }], aria: "UPCR trend" })],
-      ["Creatinine", "mg/dL", n2(last.creatinine), CXChart({ series: series("creatinine", "#9fb4d6"), events, zero: false, aria: "Creatinine trend" })],
+      ["Creatinine", creaUnit(), creaFmt(last), CXChart({ series: [{ color: "#9fb4d6", area: true, points: V.map(v => ({ x: v.month, y: crea(v) })) }], events, zero: false, aria: "Creatinine trend" })],
     ];
-    const maxAbs = Math.max(...s.drivers.map(d => Math.abs(d.contribution)), 0.5);
+    const maxAbs = Math.max(...s.drivers.map(d => Math.abs(d.contribution_pp)), 2);
     const unit = { egfr: " mL/min", upcr: " g/g", tac_trough: " ng/mL", tac_cv: "%", tac_ttr: "%", ddcfdna: "%", dsa_mfi_max: "", cpra: "%", months_since_tx: " mo", egfr_change_3m: "%", recipient_age: " y", donor_age: " y" };
-    const fmtV = (f, v) => ["donor_deceased", "retransplant", "induction_atg", "dgf", "bk_viremia", "prior_rejection"].includes(f) ? (v ? "Yes" : "No") : (Math.abs(v) >= 100 ? n0(v) : (+v).toFixed(v % 1 ? 2 : 0).replace(/\.?0+$/, "")) + (unit[f] || "");
+    const fmtV = (f, v) => v == null ? "n/a" : ["donor_deceased", "retransplant", "induction_atg", "dgf", "bk_viremia", "prior_rejection", "dsa_class2"].includes(f) ? (v ? "Yes" : "No") : (Math.abs(v) >= 100 ? n0(v) : (+v).toFixed(v % 1 ? 2 : 0).replace(/\.?0+$/, "")) + (unit[f] || "");
     const mm = p.hla.mismatched;
     const hlaRows = LOCI.map(l => `<tr><th>${l}</th>
       <td>${p.hla.recipient[l].map(a => `<span class="al">${l}*${a}</span>`).join("")}</td>
@@ -133,14 +161,22 @@
           <span class="eyebrow">12-month rejection risk</span>
           <div class="big num">${pct(s.risk_12m)}</div>
           <div class="rk-row"><span class="band" style="background:${bc}">${bl}</span><span class="sub">${s.risk_delta >= 0 ? "+" : ""}${(s.risk_delta * 100).toFixed(0)} pts vs previous visit</span></div>
-          <div class="acts"><a class="btn btn-ember" href="#review" id="toReview">Record review</a><button class="btn" id="addVisit" ${isLive ? "" : 'title="Needs the API server"'}>Add lab results</button></div>
+          <div class="acts"><a class="btn btn-blue" href="#review" id="toReview">Record review</a><button class="btn" id="addVisit" ${isLive ? "" : 'title="Needs the API server"'}>Add lab results</button></div>
         </div>
       </section>
 
-      <div class="labs-strip panel" aria-label="Latest visit">
-        <span class="eyebrow">Latest visit · month ${last.month}</span>
-        ${[["eGFR", n0(last.egfr)], ["Creatinine", n2(last.creatinine)], ["UPCR", n2(last.upcr)], ["Tac C0", n1(last.tac_trough)], ["Tac CV", n0(last.tac_cv) + "%"], ["TTR", n0(last.tac_ttr) + "%"], ["dd-cfDNA", n2(last.ddcfdna) + "%"], ["DSA MFI", last.dsa_mfi_max ? n0(last.dsa_mfi_max) : "Neg"], ["BK", last.bk_viremia ? "Positive" : "Neg"]].map(([k, v]) => `<div><span>${k}</span><b class="num">${v}</b></div>`).join("")}
-      </div>
+      <div class="labs-h"><h3>Latest results · month ${last.month}</h3><span class="sub">Dots show the last six measurements; dashed line is the threshold or target</span></div>
+      <div class="labs">${(() => { const pv = V.length > 1 ? V[V.length - 2] : null, series = k => V.map(v => v[k]);
+        return [
+          labTile({ title: "eGFR", value: last.egfr, unit: "mL/min/1.73m²", prev: pv && pv.egfr, lowerIsBetter: false, values: series("egfr"), flag: last.month >= 3 && last.egfr_change_3m <= -th.egfr_drop_pct, status: `${last.egfr_change_3m > 0 ? "+" : ""}${n0(last.egfr_change_3m)}% vs ~3 months · CKD-EPI 2021` }),
+          labTile({ title: "Creatinine", value: crea(last), unit: creaUnit(), fmt: v => S.unit === "umol" ? n0(v) : n2(v), prev: pv && crea(pv), lowerIsBetter: true, values: V.map(crea), status: "Serum creatinine" }),
+          labTile({ title: "Proteinuria", value: last.upcr, unit: "g/g", prev: pv && pv.upcr, lowerIsBetter: true, values: series("upcr"), ref: th.upcr_g_g, flag: last.upcr >= th.upcr_g_g, status: last.upcr >= th.upcr_g_g ? "Above threshold" : "Below threshold" }),
+          labTile({ title: "Tacrolimus C0", value: last.tac_trough, unit: "ng/mL", prev: pv && pv.tac_trough, values: series("tac_trough"), ref: last.tac_target_low, warn: last.tac_trough < last.tac_target_low || last.tac_trough > last.tac_target_high, status: `Target ${last.tac_target_low}–${last.tac_target_high} · TTR ${n0(last.tac_ttr)}%` }),
+          labTile({ title: "Tacrolimus variability", value: last.tac_cv, unit: last.tac_cv == null ? "" : "% CV", prev: pv && pv.tac_cv, lowerIsBetter: true, values: series("tac_cv"), ref: th.tac_cv_pct, warn: last.tac_cv != null && last.tac_cv > th.tac_cv_pct, status: last.tac_cv == null ? "Needs ≥ 3 stable-phase troughs" : "Stable phase, last 6 months" }),
+          labTile({ title: "dd-cfDNA", value: last.ddcfdna, unit: "%", prev: pv && pv.ddcfdna, lowerIsBetter: true, values: series("ddcfdna"), ref: th.ddcfdna_pct, flag: last.month >= 1 && last.ddcfdna >= th.ddcfdna_pct, status: last.month < 1 ? "Physiologically raised in month 1" : last.ddcfdna >= th.ddcfdna_pct ? "Above threshold" : "Below threshold" }),
+          labTile({ title: "DSA, immunodominant", value: last.dsa_mfi_max || "Negative", unit: last.dsa_mfi_max ? "MFI" : "", prev: pv && last.dsa_mfi_max ? pv.dsa_mfi_max : null, lowerIsBetter: true, values: series("dsa_mfi_max"), ref: th.dsa_mfi, flag: last.dsa_mfi_max >= th.dsa_mfi, status: last.dsa && last.dsa[0] ? `anti-${last.dsa[0].spec}, class ${last.dsa[0].class}` : "Single-antigen beads" }),
+          labTile({ title: "BK virus PCR", value: last.bk_viremia ? "Detected" : "Not detected", warn: !!last.bk_viremia, status: "Plasma BK viremia" }),
+        ].join(""); })()}</div>
 
       <div class="grid g-2-1">
         <section class="panel">
@@ -149,8 +185,8 @@
             zones: [{ y0: th.risk_high * 100, y1: 100, color: "var(--crit)", opacity: .07 }, { y0: th.risk_moderate * 100, y1: th.risk_high * 100, color: "var(--warn)", opacity: .05 }],
             events: events.filter(e => e.color === "var(--crit)"), height: 230, width: 760, aria: "Risk trajectory" })}
           <h4 class="mini">Recent visits</h4>
-          <div class="tbl-wrap"><table class="tbl compact vlog"><thead><tr><th>Month</th><th class="r">Risk</th><th class="r">eGFR</th><th class="r">UPCR</th><th class="r">Tac C0</th><th class="r">dd-cfDNA</th><th class="r">DSA MFI</th></tr></thead><tbody>
-          ${V.slice(-6).reverse().map(v => { const tr = s.trajectory.find(t => t.month === v.month); return `<tr><td class="mono">M${v.month}</td><td class="r num">${tr ? pct(tr.risk) : "—"}</td><td class="r num">${n0(v.egfr)}</td><td class="r num ${v.upcr >= th.upcr_g_g ? "hot" : ""}">${n2(v.upcr)}</td><td class="r num ${v.tac_trough < v.tac_target_low ? "hot" : ""}">${n1(v.tac_trough)}</td><td class="r num ${v.ddcfdna >= th.ddcfdna_pct ? "hot" : ""}">${n2(v.ddcfdna)}%</td><td class="r num ${v.dsa_mfi_max >= th.dsa_mfi ? "hot" : ""}">${v.dsa_mfi_max ? n0(v.dsa_mfi_max) : "—"}</td></tr>`; }).join("")}
+          <div class="tbl-wrap"><table class="tbl compact vlog"><thead><tr><th>Month</th><th class="r">Risk</th><th class="r">Creat. <span style="text-transform:none">${creaUnit()}</span></th><th class="r">eGFR</th><th class="r">UPCR</th><th class="r">Tac C0</th><th class="r">dd-cfDNA</th><th class="r">DSA MFI</th></tr></thead><tbody>
+          ${V.slice(-6).reverse().map(v => { const tr = s.trajectory.find(t => t.month === v.month); return `<tr><td class="mono">M${v.month}</td><td class="r num">${tr ? pct(tr.risk) : "—"}</td><td class="r num">${creaFmt(v)}</td><td class="r num">${n0(v.egfr)}</td><td class="r num ${v.upcr >= th.upcr_g_g ? "hot" : ""}">${n2(v.upcr)}</td><td class="r num ${v.tac_trough < v.tac_target_low ? "hot" : ""}">${n1(v.tac_trough)}</td><td class="r num ${v.ddcfdna >= th.ddcfdna_pct ? "hot" : ""}">${n2(v.ddcfdna)}%</td><td class="r num ${v.dsa_mfi_max >= th.dsa_mfi ? "hot" : ""}">${v.dsa_mfi_max ? n0(v.dsa_mfi_max) : "—"}</td></tr>`; }).join("")}
           </tbody></table></div>
         </section>
         <section class="panel">
@@ -164,9 +200,9 @@
 
       <div class="grid g-1-1">
         <section class="panel">
-          <header class="ph"><h3>Why this estimate</h3><span class="sub">Contribution to log-odds, latest visit</span></header>
-          <ul class="drivers">${s.drivers.map(d => { const w = Math.abs(d.contribution) / maxAbs * 50; const up = d.contribution > 0; return `<li><span class="dl">${esc(d.label)}</span><span class="dv num">${esc(fmtV(d.feature, d.value))}</span><span class="bar"><i style="${up ? `left:50%;width:${w}%;background:var(--crit)` : `right:50%;width:${w}%;background:var(--ok)`}"></i></span><span class="dc num ${up ? "up" : "down"}">${up ? "+" : ""}${d.contribution.toFixed(2)}</span></li>`; }).join("")}</ul>
-          <p class="disclaimer">Red raises risk, green lowers it. Explanations come from a transparent logistic model trained alongside the main model.</p>
+          <header class="ph"><h3>Why this estimate</h3><span class="sub">Contribution to 12-month risk, latest visit</span></header>
+          <ul class="drivers">${s.drivers.length ? s.drivers.map(d => { const w = Math.abs(d.contribution_pp) / maxAbs * 50; const up = d.contribution_pp > 0; return `<li><span class="dl">${esc(d.label)}</span><span class="dv num">${esc(fmtV(d.feature, d.value))}</span><span class="bar"><i style="${up ? `left:50%;width:${w}%;background:var(--crit)` : `right:50%;width:${w}%;background:var(--ok)`}"></i></span><span class="dc num ${up ? "up" : "down"}">${up ? "+" : "−"}${Math.abs(d.contribution_pp).toFixed(1)} pp</span></li>`; }).join("") : '<li class="sub">No single factor moves the risk by more than 0.3 points.</li>'}</ul>
+          <p class="disclaimer">Each factor is reset to a typical stable recipient and the patient is re-scored by the same model; the bar is the change in 12-month risk, in percentage points. Red raises risk, green lowers it.</p>
         </section>
         <section class="panel">
           <header class="ph"><h3>Immunogenetics</h3><span class="sub">Donor vs recipient, mismatched donor alleles highlighted</span></header>
@@ -176,6 +212,8 @@
             <div><span>PIRCHE-II</span><b class="num">${p.pirche_ii}</b></div>
             <div><span>Preformed DSA</span><b>${p.preformed_dsa ? "Yes" : "No"}</b></div>
           </div>
+          <div class="sub">Current DSA (latest single-antigen bead test)</div>
+          <div class="dsa-list">${(last.dsa || []).length ? last.dsa.map(d => `<span class="${d.mfi < th.dsa_mfi ? "lo" : ""}">anti-${esc(d.spec)} · class ${esc(d.class)} · MFI ${n0(d.mfi)}</span>`).join("") : '<span class="lo">No donor-specific antibodies detected</span>'}</div>
           <div class="eplet">
             <div class="el-h"><span>Class II eplet mismatch (DR+DQ)</span><b class="num ${s.eplet_flag ? "hotc" : ""}">${p.eplet_mm_class2}</b></div>
             <div class="el-bar"><i style="width:${epletPct}%"></i><em style="left:${epletTh}%" title="Threshold ${th.eplet_class2}"></em></div>
@@ -218,23 +256,36 @@
 
   function openVisit(p) {
     const last = p.visits[p.visits.length - 1] || {};
-    const dlg = $("#dlg");
-    const fields = [["month", "Month post-transplant", (last.month || 0) + 1, 0.25], ["creatinine", "Creatinine (mg/dL)", last.creatinine, 0.01], ["egfr", "eGFR (mL/min/1.73m²)", last.egfr, 0.1],
-      ["upcr", "UPCR (g/g)", last.upcr, 0.01], ["tac_trough", "Tacrolimus trough (ng/mL)", last.tac_trough, 0.1], ["ddcfdna", "dd-cfDNA (%)", last.ddcfdna, 0.01], ["dsa_mfi_max", "DSA immunodominant MFI", last.dsa_mfi_max, 1]];
-    dlg.innerHTML = `<form method="dialog" id="vf" class="vf">
+    const dlg = $("#dlg"), live = Cortex.mode === "live";
+    const top = (last.dsa || [])[0] || {};
+    dlg.innerHTML = `<form id="vf" class="vf">
       <h3>Add lab results · ${esc(p.id)}</h3>
-      ${Cortex.mode !== "live" ? `<p class="note">This preview has no API server, so new results cannot be saved or re-scored here.</p>` : ""}
-      <div class="vgrid">${fields.map(([k, l, v, st]) => `<label for="v_${k}">${l}<input id="v_${k}" type="number" step="${st}" value="${v ?? ""}" required></label>`).join("")}
-      <label for="v_bk" class="ck"><input id="v_bk" type="checkbox" ${last.bk_viremia ? "checked" : ""}> BK viremia detected</label></div>
+      ${!live ? `<p class="note">This preview has no API server, so new results cannot be saved or re-scored here.</p>` : ""}
+      <div class="vgrid">
+        <label for="v_month">Month post-transplant<input id="v_month" type="number" step="0.25" value="${(last.month || 0) + 1}" required></label>
+        <label for="v_cr">Creatinine (${creaUnit()})<input id="v_cr" type="number" step="${S.unit === "umol" ? 1 : 0.01}" value="${crea(last) ?? ""}" required></label>
+        <label for="v_upcr">UPCR (g/g)<input id="v_upcr" type="number" step="0.01" value="${last.upcr ?? ""}" required></label>
+        <label for="v_tac">Tacrolimus trough (ng/mL)<input id="v_tac" type="number" step="0.1" value="${last.tac_trough ?? ""}" required></label>
+        <label for="v_dd">dd-cfDNA (%)<input id="v_dd" type="number" step="0.01" value="${last.ddcfdna ?? ""}" required></label>
+        <label for="v_dsa_spec">DSA specificity (blank if none)<input id="v_dsa_spec" placeholder="e.g. DQ7" value="${esc(top.spec || "")}"></label>
+        <label for="v_dsa_cls">DSA class<select id="v_dsa_cls"><option value="II" ${top.class !== "I" ? "selected" : ""}>Class II</option><option value="I" ${top.class === "I" ? "selected" : ""}>Class I</option></select></label>
+        <label for="v_dsa_mfi">DSA MFI<input id="v_dsa_mfi" type="number" step="1" value="${top.mfi ?? ""}"></label>
+        <label for="v_bk" class="ck"><input id="v_bk" type="checkbox" ${last.bk_viremia ? "checked" : ""}> BK viremia detected</label>
+      </div>
+      <p class="sub">eGFR is calculated from creatinine with CKD-EPI 2021. Tacrolimus CV, time in range and the 3-month eGFR change are derived automatically.</p>
       <div class="sub" id="vmsg" role="status"></div>
-      <div class="rv-actions"><button class="btn" value="cancel" type="button" id="vcancel">Cancel</button><button class="btn btn-blue" type="submit" ${Cortex.mode !== "live" ? "disabled" : ""}>Save and re-score</button></div>
+      <div class="rv-actions"><button class="btn" type="button" id="vcancel">Cancel</button><button class="btn btn-blue" type="submit" ${live ? "" : "disabled"}>Save and re-score</button></div>
     </form>`;
     dlg.showModal();
     $("#vcancel").onclick = () => dlg.close();
     $("#vf").onsubmit = async e => {
       e.preventDefault();
-      const body = Object.fromEntries(fields.map(([k]) => [k, parseFloat($("#v_" + k).value)]));
-      body.bk_viremia = $("#v_bk").checked ? 1 : 0;
+      const num = id => parseFloat($(id).value);
+      const spec = $("#v_dsa_spec").value.trim(), mfi = num("#v_dsa_mfi");
+      const body = { month: num("#v_month"), creatinine: num("#v_cr"), creatinine_unit: S.unit === "umol" ? "umol/L" : "mg/dL",
+        upcr: num("#v_upcr"), tac_trough: num("#v_tac"), ddcfdna: num("#v_dd"), bk_viremia: $("#v_bk").checked ? 1 : 0,
+        dsa: spec && mfi >= 0 ? [{ spec, hla_class: $("#v_dsa_cls").value, mfi }] : [] };
+      if (Object.values(body).some(v => typeof v === "number" && isNaN(v))) { $("#vmsg").textContent = "Fill in every numeric field."; return; }
       try { await Cortex.addVisit(p.id, body); dlg.close(); S.wl = null; renderPatient(p.id); }
       catch (x) { $("#vmsg").textContent = x.message; }
     };
@@ -351,6 +402,11 @@
     $("#mode").classList.toggle("demo", mode !== "live");
     if (S.user.role !== "admin") document.querySelectorAll(".admin-only").forEach(x => x.hidden = true);
     $("#logout").onclick = async () => { await Cortex.logout(); location.href = "login.html"; };
+    document.querySelectorAll(".unit button").forEach(b => {
+      b.setAttribute("aria-pressed", b.dataset.u === S.unit);
+      b.onclick = () => { S.unit = b.dataset.u; try { localStorage.setItem("cx_unit", S.unit); } catch {}
+        document.querySelectorAll(".unit button").forEach(x => x.setAttribute("aria-pressed", x === b)); route(); };
+    });
     $("#gsearch").addEventListener("keydown", e => {
       if (e.key !== "Enter") return;
       const q = e.target.value.trim().toUpperCase(); if (!q) return;

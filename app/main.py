@@ -24,11 +24,15 @@ from pydantic import BaseModel, Field
 from sqlalchemy import JSON, Column, DateTime, Integer, String, Text, create_engine, select
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
 
-from cortex.cohort import demo_cohort
-from cortex.engine import DEFAULT_THRESHOLDS, THRESHOLD_INFO, summarize
+import sys
 
 ROOT = Path(__file__).resolve().parent.parent
 WEB_DIR = ROOT / "web"
+sys.path.insert(0, str(ROOT / "ml"))  # the medical AI lives in its own package: ml/cortex_ml
+
+from cortex_ml.clinical import MGDL_TO_UMOL, ckd_epi_2021, egfr_change_3m, tac_metrics, tac_target  # noqa: E402
+from cortex_ml.cohort import demo_cohort  # noqa: E402
+from cortex_ml.engine import DEFAULT_THRESHOLDS, THRESHOLD_INFO, summarize  # noqa: E402
 log = logging.getLogger("cortex")
 logging.basicConfig(level=logging.INFO)
 
@@ -295,14 +299,20 @@ def patient(pid: str, u: User = Depends(current_user), db: Session = Depends(get
     return {"patient": p.data, "summary": summarize(p.data, thresholds(db)), "reviews": reviews}
 
 
+class DsaIn(BaseModel):
+    spec: str = Field(min_length=1, max_length=12)       # e.g. DQ7
+    hla_class: str = Field(pattern="^(I|II)$")
+    mfi: float = Field(ge=0, le=40000)
+
+
 class VisitIn(BaseModel):
     month: float = Field(gt=0, le=240)
-    creatinine: float = Field(gt=0.2, le=15)
-    egfr: float = Field(gt=1, le=150)
+    creatinine: float = Field(gt=0, le=2000)
+    creatinine_unit: str = Field("umol/L", pattern="^(umol/L|mg/dL)$")
     upcr: float = Field(ge=0, le=20)
     tac_trough: float = Field(ge=0, le=40)
     ddcfdna: float = Field(ge=0, le=20)
-    dsa_mfi_max: float = Field(ge=0, le=40000)
+    dsa: list[DsaIn] = Field(default_factory=list, max_length=10)
     bk_viremia: int = Field(0, ge=0, le=1)
 
 
@@ -315,17 +325,21 @@ def add_visit(pid: str, v: VisitIn, u: User = Depends(current_user), db: Session
     visits = d["visits"]
     if visits and v.month <= visits[-1]["month"]:
         raise HTTPException(400, "New visit must be later than the last recorded visit")
-    lo, hi = (8.0, 12.0) if v.month <= 3 else (5.0, 8.0)
-    window = [x for x in visits if v.month - 6 <= x["month"]] + [{"month": v.month, "tac_trough": v.tac_trough,
-                                                                  "tac_target_low": lo, "tac_target_high": hi}]
-    tr = [x["tac_trough"] for x in window]
-    import numpy as np
-    cv = float(np.std(tr) / np.mean(tr) * 100) if len(tr) > 1 and np.mean(tr) > 0 else 0.0
-    ttr = float(np.mean([x["tac_target_low"] <= x["tac_trough"] <= x["tac_target_high"] for x in window]) * 100)
-    ref = [x for x in visits if v.month - 4 <= x["month"] <= v.month - 2] or visits[-1:]
-    change = float(np.clip((v.egfr - ref[0]["egfr"]) / ref[0]["egfr"] * 100, -80, 80)) if ref else 0.0
-    visits.append({**v.model_dump(), "tac_target_low": lo, "tac_target_high": hi, "tac_cv": round(cv, 1),
-                   "tac_ttr": round(ttr), "egfr_change_3m": round(change, 1)})
+    scr = v.creatinine / MGDL_TO_UMOL if v.creatinine_unit == "umol/L" else v.creatinine
+    if not 0.2 <= scr <= 15:
+        raise HTTPException(400, "Creatinine out of range; check the unit")
+    egfr = round(ckd_epi_2021(scr, d["age"], d["sex"]), 1)   # eGFR always derived, never typed
+    lo, hi = tac_target(v.month)
+    hist = [{"month": x["month"], "tac_trough": x["tac_trough"], "egfr": x["egfr"]} for x in visits]
+    cv, ttr = tac_metrics(hist + [{"month": v.month, "tac_trough": v.tac_trough, "egfr": egfr}], v.month)
+    dsa = sorted([{"spec": x.spec, "class": x.hla_class, "locus": "", "mfi": round(x.mfi)} for x in v.dsa], key=lambda x: -x["mfi"])
+    visits.append({
+        "month": v.month, "creatinine": round(scr, 2), "creatinine_umol": round(scr * MGDL_TO_UMOL), "egfr": egfr,
+        "egfr_change_3m": egfr_change_3m(hist, v.month, egfr), "upcr": v.upcr, "tac_trough": v.tac_trough,
+        "tac_target_low": lo, "tac_target_high": hi, "tac_cv": cv, "tac_ttr": ttr, "ddcfdna": v.ddcfdna,
+        "dsa": dsa, "dsa_mfi_max": dsa[0]["mfi"] if dsa else 0,
+        "dsa_class2": int(any(x["class"] == "II" and x["mfi"] >= 1000 for x in dsa)), "bk_viremia": v.bk_viremia,
+    })
     d["follow_up_months"] = v.month
     p.data = d
     audit(db, u.id, "visit_added", pid, json.dumps(v.model_dump()))
@@ -373,7 +387,7 @@ def get_audit(limit: int = 100, _: User = Depends(admin_user), db: Session = Dep
 
 @app.get("/api/model")
 def model_card(_: User = Depends(current_user)):
-    return json.loads((ROOT / "model" / "metrics.json").read_text())
+    return json.loads((ROOT / "ml" / "model" / "metrics.json").read_text())
 
 
 @app.get("/api/health")

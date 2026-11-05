@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CortexAI Graft Care</title>
+<meta name="description" content="CortexAI builds clinical decision support that estimates kidney transplant rejection risk from immunogenetics, drug exposure and graft-injury biomarkers.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Michroma&family=Manrope:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/base.css">
+<style>
+  /* layout: cinematic hero (graft in the middle, split wordmark), then a calm, single-column reading flow */
+  .wrap { width: min(1180px, calc(100% - 40px)); margin: 0 auto; }
+  header.nav { position: absolute; top: 18px; left: 0; right: 0; z-index: 5; }
+  header.nav .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  header.nav img { height: 28px; display: block; }
+  .links { display: flex; gap: 4px; padding: 6px; border-radius: 12px; align-items: center; }
+  .links a { font-size: 13px; text-decoration: none; padding: 7px 12px; border-radius: 8px; color: var(--text); }
+  .links a:hover { background: rgba(255,255,255,.06); }
+  .links a.cta { background: var(--ember); color: #1a0d00; font-weight: 700; }
+
+  .hero { position: relative; height: clamp(640px, 92vh, 980px); overflow: hidden;
+    background: radial-gradient(70% 80% at 50% 45%, #0e3a74 0%, #082650 35%, #041430 70%, var(--ink) 100%); }
+  .hero::after { content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(to bottom, transparent 70%, var(--ink)), radial-gradient(120% 90% at 50% 50%, transparent 55%, rgba(0,0,0,.5)); }
+  .hero canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .word { position: absolute; z-index: 2; font-family: var(--display); color: #f4f8ff; line-height: .9;
+    font-size: clamp(56px, 11.5vw, 176px); letter-spacing: -0.02em; pointer-events: none; text-shadow: 0 0 40px rgba(13,143,253,.25); }
+  .w1 { left: 2.5vw; top: 28%; } .w2 { right: 2.5vw; top: 46%; }
+  .lede { position: absolute; z-index: 2; left: 2.8vw; top: calc(28% + clamp(56px, 11.5vw, 176px) + 20px); max-width: 360px;
+    font-family: var(--display); font-size: 11px; letter-spacing: .08em; line-height: 1.75; text-transform: uppercase; color: #d6e3f5; }
+  .hot { position: absolute; z-index: 3; display: flex; align-items: center; gap: 10px; transform: translate(-14px, -14px); pointer-events: none; }
+  .hot .dot { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #fff; background: rgba(255,255,255,.18); box-shadow: 0 0 18px rgba(255,138,31,.8); }
+  .hot .lbl { background: #fff; color: #05101f; font-size: 12px; font-weight: 700; padding: 6px 12px; border-radius: 8px; white-space: nowrap; }
+  .layers { position: absolute; z-index: 3; left: 2.5vw; bottom: 9%; display: flex; gap: 8px; }
+  .layers button { width: 46px; height: 46px; border-radius: 50%; border: 1px solid rgba(255,255,255,.35); background: transparent;
+    font-family: var(--display); font-size: 12px; cursor: pointer; color: rgba(255,255,255,.55); }
+  .layers button[aria-pressed="true"] { color: #fff; border-color: #fff; background: rgba(255,255,255,.08); }
+  .heroCard { position: absolute; z-index: 3; right: 2.5vw; bottom: 9%; width: 330px; padding: 16px; }
+  .heroCard .h { display: flex; justify-content: space-between; align-items: center; font-family: var(--display); font-size: 13px; }
+  .heroCard .k { font-size: 11px; color: var(--muted); margin: 2px 0 10px; }
+  .heroCard p { margin: 0; padding: 12px; border-radius: 10px; background: rgba(13,143,253,.14); border: 1px solid rgba(13,143,253,.28); font-size: 13px; color: #d9e9ff; }
+
+  section { padding: 96px 0; }
+  .sec-h { display: grid; gap: 12px; margin-bottom: 40px; max-width: 760px; }
+  .sec-h h2 { font-family: var(--display); font-size: clamp(24px, 3vw, 36px); line-height: 1.25; font-weight: 400; }
+  .sec-h p { color: var(--muted); margin: 0; font-size: 17px; max-width: 65ch; }
+
+  .layersGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .layerCard { padding: 24px; display: grid; gap: 10px; align-content: start; }
+  .layerCard .n { font-family: var(--display); font-size: 12px; color: var(--ember); }
+  .layerCard h3 { font-size: 19px; }
+  .layerCard p { margin: 0; color: var(--muted); font-size: 15px; }
+  .layerCard ul { margin: 4px 0 0; padding-left: 18px; color: #c6d5ea; font-size: 14px; display: grid; gap: 4px; }
+
+  .flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin-top: 28px; border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
+  .flow div { padding: 20px; border-right: 1px solid var(--line); background: rgba(7,26,54,.5); }
+  .flow div:last-child { border-right: 0; }
+  .flow b { display: block; font-size: 15px; margin-bottom: 6px; }
+  .flow span { color: var(--muted); font-size: 14px; }
+
+  .preview { padding: 0; overflow: hidden; }
+  .pv-top { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; border-bottom: 1px solid var(--line); }
+  .pv-top b { font-size: 15px; }
+  .pv-row { display: grid; grid-template-columns: 6px 1.4fr .7fr 1fr 1fr 1.6fr; gap: 14px; align-items: center; padding: 12px 18px; border-bottom: 1px solid var(--line); font-size: 14px; }
+  .pv-row:last-child { border-bottom: 0; }
+  .pv-row.head { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+  .stripe { width: 4px; height: 30px; border-radius: 3px; }
+  .chip { display: inline-block; font-size: 12px; padding: 3px 8px; border-radius: 999px; margin: 2px 4px 2px 0; border: 1px solid; }
+  .chip.hi { color: #ffb0aa; border-color: rgba(255,93,82,.5); background: rgba(255,93,82,.12); }
+  .chip.md { color: #ffd59a; border-color: rgba(255,181,71,.45); background: rgba(255,181,71,.1); }
+  .risk { font-family: var(--mono); font-weight: 500; }
+
+  .refs { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  .ref { padding: 20px; display: grid; gap: 8px; }
+  .ref .k { font-family: var(--mono); font-size: 13px; color: var(--ember); }
+  .ref p { margin: 0; color: #c6d5ea; font-size: 15px; }
+  .ref a { font-size: 13px; color: var(--muted); }
+
+  .timeline { position: relative; display: grid; gap: 0; }
+  .timeline::before { content: ""; position: absolute; left: 132px; top: 8px; bottom: 8px; width: 1px; background: linear-gradient(var(--blue), var(--ember)); opacity: .5; }
+  .tl { display: grid; grid-template-columns: 132px 1fr; gap: 28px; padding: 14px 0; }
+  .tl .d { font-family: var(--mono); font-size: 13px; color: var(--muted); text-align: right; padding-right: 0; position: relative; }
+  .tl .d::after { content: ""; position: absolute; right: -33px; top: 5px; width: 9px; height: 9px; border-radius: 50%; background: var(--ink); border: 2px solid var(--blue); }
+  .tl.key .d::after { border-color: var(--ember); background: var(--ember); box-shadow: 0 0 12px rgba(255,138,31,.7); }
+  .tl .c { padding-left: 14px; }
+  .tl .c b { font-size: 16px; display: block; }
+  .tl .c span { color: var(--muted); font-size: 14px; }
+  .tl .tag { display: block; width: max-content; margin-top: 6px; font-family: var(--mono); font-size: 12px; color: var(--ember); }
+  .yr { font-family: var(--display); font-size: 13px; color: var(--text); padding: 26px 0 6px; display: grid; grid-template-columns: 132px 1fr; gap: 28px; }
+  .yr span:first-child { text-align: right; }
+
+  .logos { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
+  .logos figure { margin: 0; background: var(--ink); display: grid; place-items: center; height: 116px; padding: 18px; }
+  .logos img { max-height: 54px; max-width: 120px; object-fit: contain; opacity: .78; transition: opacity .2s; }
+  .logos figure:hover img { opacity: 1; }
+  .logos figure.tall img { max-height: 70px; }
+
+  .cta-band { padding: 56px; display: grid; grid-template-columns: 1.3fr 1fr; gap: 32px; align-items: center; }
+  .cta-band h2 { font-family: var(--display); font-size: clamp(22px, 2.6vw, 32px); font-weight: 400; line-height: 1.3; }
+  .cta-band p { color: var(--muted); margin: 10px 0 0; }
+  .cta-band .acts { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+  footer { padding: 40px 0 56px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+  footer .wrap { display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; align-items: center; }
+  footer img { height: 22px; }
+
+  @media (max-width: 960px) {
+    .layersGrid, .refs { grid-template-columns: 1fr; }
+    .flow { grid-template-columns: 1fr 1fr; } .flow div:nth-child(2) { border-right: 0; } .flow div:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
+    .logos { grid-template-columns: repeat(4, 1fr); }
+    .pv-row { grid-template-columns: 6px 1.4fr .7fr 1.6fr; } .pv-row > :nth-child(4), .pv-row > :nth-child(5) { display: none; }
+    .cta-band { grid-template-columns: 1fr; padding: 32px; } .cta-band .acts { justify-content: flex-start; }
+    .heroCard { display: none; }
+  }
+  @media (max-width: 640px) {
+    .links a:not(.cta) { display: none; }
+    .word { font-size: 54px; } .w1 { top: 16%; } .w2 { top: 26%; } .lede { top: auto; bottom: 18%; right: 20px; }
+    .layers { bottom: 6%; }
+    .timeline::before { left: 84px; } .tl, .yr { grid-template-columns: 84px 1fr; gap: 20px; } .tl .d::after { right: -25px; }
+    .logos { grid-template-columns: repeat(2, 1fr); }
+    section { padding: 64px 0; }
+  }
+</style>
+</head>
+<body>
+<header class="nav">
+  <div class="wrap">
+    <a href="index.html" aria-label="CortexAI home"><img src="assets/logos/cortexai.png" alt="CortexAI"></a>
+    <nav class="links glass" aria-label="Main">
+      <a href="#platform">Platform</a>
+      <a href="#science">Science</a>
+      <a href="#roadmap">Roadmap</a>
+      <a href="#recognition">Recognition</a>
+      <a class="cta" href="login.html">Clinician sign in</a>
+    </nav>
+  </div>
+</header>
+
+<div class="hero">
+  <canvas id="cv" aria-hidden="true"></canvas>
+  <div class="word w1" aria-hidden="true">Graft</div>
+  <div class="word w2" aria-hidden="true">Care</div>
+  <h1 class="lede">Clinical AI that estimates kidney transplant rejection risk by reading immunogenetics, drug exposure and graft-injury biomarkers together.</h1>
+  <div class="hot" id="hot"><span class="dot"></span><span class="lbl" id="hotLbl">Immunogenetics</span></div>
+  <div class="layers" role="group" aria-label="Signal layers">
+    <button aria-pressed="true" data-l="0" title="Immunogenetics">01</button>
+    <button aria-pressed="false" data-l="1" title="Drug exposure">02</button>
+    <button aria-pressed="false" data-l="2" title="Graft injury">03</button>
+  </div>
+  <aside class="heroCard glass">
+    <div class="h"><span>CortexAI Clinic</span><img src="assets/logos/cortexai-mark.png" alt="" style="height:18px"></div>
+    <div class="k">Decision support for transplant nephrology</div>
+    <p id="layerText">HLA typing, class II eplet load and PIRCHE-II scores describe how foreign the graft looks to the recipient's immune system.</p>
+  </aside>
+</div>
+
+<main>
+  <section id="platform">
+    <div class="wrap">
+      <div class="sec-h">
+        <span class="eyebrow">Platform</span>
+        <h2>Three signal layers, one risk the transplant team can act on</h2>
+        <p>Rejection rarely announces itself through one number. CortexAI keeps the immunological, pharmacological and injury picture of every recipient in one place and ranks who needs attention first.</p>
+      </div>
+      <div class="layersGrid">
+        <article class="layerCard glass">
+          <span class="n">01 · Immunogenetics</span>
+          <h3>How foreign is the graft</h3>
+          <p>Donor and recipient HLA at allele level, read as molecular mismatch rather than antigen counts.</p>
+          <ul><li>A, B, C, DRB1, DQB1 typing side by side</li><li>Class II eplet mismatch and PIRCHE-II</li><li>cPRA and preformed DSA</li></ul>
+        </article>
+        <article class="layerCard glass">
+          <span class="n">02 · Drug exposure</span>
+          <h3>Is immunosuppression holding</h3>
+          <p>Tacrolimus troughs against the target corridor for that post-transplant phase.</p>
+          <ul><li>Time in therapeutic range</li><li>Intrapatient variability (CV)</li><li>Under-exposure flags</li></ul>
+        </article>
+        <article class="layerCard glass">
+          <span class="n">03 · Graft injury</span>
+          <h3>Is the graft being hurt now</h3>
+          <p>Non-invasive markers that move before, or alongside, creatinine.</p>
+          <ul><li>dd-cfDNA fraction trend</li><li>De novo DSA and MFI trajectory</li><li>eGFR slope, UPCR, BK viremia, Banff biopsies</li></ul>
+        </article>
+      </div>
+      <div class="flow" aria-label="How a review works">
+        <div><b>1 · Ingest</b><span>Labs, HLA typing and biopsy reports per visit.</span></div>
+        <div><b>2 · Score</b><span>12-month rejection risk with the factors behind it.</span></div>
+        <div><b>3 · Triage</b><span>Worklist ordered by alerts and risk, thresholds set by the centre.</span></div>
+        <div><b>4 · Decide</b><span>Clinician records the decision. Every action lands in the audit log.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section style="padding-top:0">
+    <div class="wrap">
+      <div class="preview glass" role="img" aria-label="Example worklist from the synthetic demo cohort">
+        <div class="pv-top"><b>Today's worklist</b><span class="disclaimer">Synthetic demo cohort</span></div>
+        <div class="pv-row head"><span></span><span>Recipient</span><span>Risk 12 mo</span><span>dd-cfDNA</span><span>DSA MFI</span><span>Signals</span></div>
+        <div class="pv-row"><span class="stripe" style="background:var(--crit)"></span><span>CX-1040 · M 54 · 4 mo</span><span class="risk" style="color:#ff9d94">49%</span><span class="num">1.31%</span><span class="num">—</span><span><i class="chip hi">dd-cfDNA ≥ 1%</i><i class="chip hi">eGFR decline</i><i class="chip md">Proteinuria</i></span></div>
+        <div class="pv-row"><span class="stripe" style="background:var(--crit)"></span><span>CX-1047 · M 58 · 3 mo</span><span class="risk" style="color:#ff9d94">55%</span><span class="num">0.57%</span><span class="num">1,770</span><span><i class="chip hi">De novo DSA</i></span></div>
+        <div class="pv-row"><span class="stripe" style="background:var(--crit)"></span><span>CX-1089 · M 32 · 4 mo</span><span class="risk" style="color:#9fe9c8">8%</span><span class="num">2.08%</span><span class="num">—</span><span><i class="chip hi">dd-cfDNA ≥ 1%</i><i class="chip hi">eGFR decline</i></span></div>
+        <div class="pv-row"><span class="stripe" style="background:var(--ok)"></span><span>CX-1208 · M 49 · 8 mo</span><span class="risk" style="color:#9fe9c8">6%</span><span class="num">0.40%</span><span class="num">—</span><span class="disclaimer">No signals</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="science">
+    <div class="wrap">
+      <div class="sec-h">
+        <span class="eyebrow">Clinical basis</span>
+        <h2>Built on markers transplant centres already use</h2>
+        <p>Default alert thresholds come from published work and every centre can tune them. The model is trained on a synthetic cohort today and needs prospective validation on real recipients before clinical use.</p>
+      </div>
+      <div class="refs">
+        <article class="ref glass"><span class="k">dd-cfDNA ≥ 1%</span><p>The fraction of donor-derived cell-free DNA most often used to separate normal from abnormal results, with high negative predictive value for rejection.</p><a href="https://www.frontiersin.org/journals/transplant-international/articles/10.3389/ti.2022.10448/full">Kant &amp; Brennan, Transplant International 2022</a></article>
+        <article class="ref glass"><span class="k">DSA MFI ≥ 1,400</span><p>The binary donor-specific antibody cut-off inside the iBox prognostication system, which combines eGFR, proteinuria, DSA and Banff lesions.</p><a href="https://doi.org/10.1136/bmj.l4923">Loupy et al., BMJ 2019</a></article>
+        <article class="ref glass"><span class="k">Class II eplets ≥ 14</span><p>Living-donor recipients above this load developed de novo class II DSA far more often (20.2% vs 3.4%).</p><a href="https://www.frontiersin.org/journals/immunology/articles/10.3389/fimmu.2020.02000/full">Sakamoto et al., Frontiers in Immunology 2020</a></article>
+        <article class="ref glass"><span class="k">Tacrolimus CV &gt; 30%</span><p>High intrapatient variability and time below range are associated with rejection and graft loss; published cut-offs span roughly 23–40%.</p><a href="https://www.frontiersin.org/journals/immunology/articles/10.3389/fimmu.2026.1739104/full">Benning et al., Frontiers in Immunology 2026</a></article>
+      </div>
+    </div>
+  </section>
+
+  <section id="roadmap">
+    <div class="wrap">
+      <div class="sec-h">
+        <span class="eyebrow">Roadmap</span>
+        <h2>From a lung-cancer prototype to transplant immunology</h2>
+      </div>
+      <div class="timeline" id="tl"></div>
+    </div>
+  </section>
+
+  <section id="recognition" style="padding-top:24px">
+    <div class="wrap">
+      <div class="sec-h"><span class="eyebrow">Recognized and supported by</span></div>
+      <div class="logos" id="logos"></div>
+    </div>
+  </section>
+
+  <section style="padding-top:0">
+    <div class="wrap">
+      <div class="cta-band glass">
+        <div>
+          <h2>Running a transplant programme?</h2>
+          <p>We are looking for centres to validate CortexAI on retrospective and prospective cohorts. Clinician accounts are issued per centre.</p>
+        </div>
+        <div class="acts">
+          <a class="btn btn-ember" href="login.html">Clinician sign in</a>
+          <a class="btn" href="https://cortexos.it.com">cortexos.it.com</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+<footer>
+  <div class="wrap">
+    <img src="assets/logos/cortexai.png" alt="CortexAI">
+    <span>Research prototype on synthetic data. Not a medical device and not approved for clinical use.</span>
+    <span>© 2026 CortexAI · Astana</span>
+  </div>
+</footer>
+
+<script src="assets/js/kidney.js"></script>
+<script>
+  const TEXT = [
+    "HLA typing, class II eplet load and PIRCHE-II scores describe how foreign the graft looks to the recipient's immune system.",
+    "Tacrolimus troughs, time in range and intrapatient variability show whether immunosuppression is actually holding.",
+    "dd-cfDNA, DSA trajectory, eGFR slope and proteinuria show whether the graft is being injured right now.",
+  ];
+  const hot = document.getElementById("hot"), hotLbl = document.getElementById("hotLbl");
+  const k = KidneyCloud(document.getElementById("cv"), { widthFrac: 0.3, cy: 0.5,
+    onHotspot([x, y], label) { hot.style.left = x + "px"; hot.style.top = y + "px"; hotLbl.textContent = label; } });
+  const btns = document.querySelectorAll(".layers button");
+  btns.forEach(b => b.addEventListener("click", () => {
+    btns.forEach(x => x.setAttribute("aria-pressed", x === b)); k.setLayer(+b.dataset.l);
+    document.getElementById("layerText").textContent = TEXT[+b.dataset.l];
+  }));
+  let li = 0; const auto = setInterval(() => { li = (li + 1) % 3; btns[li].click(); }, 5000);
+  document.querySelector(".layers").addEventListener("pointerdown", () => clearInterval(auto));
+
+  const ROADMAP = [
+    ["2024", [
+      ["Dec 2024", "CortexAI founded by Assylzhan Abdullayev", "First prototype: a clinical AI agent for early lung-cancer detection.", 1],
+    ]],
+    ["2025", [
+      ["Apr 2025", "Presented to the Ministry of Digital Technologies of Uzbekistan", "Nominated and invited to present the prototype."],
+      ["May 2025", "Startup of the Year, Astana IT University", "Recognized by one of the leading IT universities in Eurasia."],
+      ["Aug 2025", "Jas Kenes Presidential Award", "Founder and CEO awarded by Vice-President of Kazakhstan Yerlan Karin."],
+      ["Aug 2025", "Presidential delegation to the Kyrgyz Republic", "Presented to the Government of the Kyrgyz Republic in Bishkek as part of Kazakhstan's delegation."],
+      ["Sep 2025", "Pivot to transplant rejection", "After a team retreat in Thailand, CortexAI refocused on predicting organ rejection from genetic data.", 1],
+      ["Oct 2025", "Entrepreneurship World Cup, Saudi Arabia", "Selected; first funding secured for the soft-landing programme.", 0, "$65,000"],
+      ["Oct 2025", "Best Biomedical Startup", "Awarded by the Ministry of Science and Higher Education of Kazakhstan."],
+      ["Nov 2025", "The Heart of Impact award", "The People Project — people and projects award."],
+    ]],
+    ["2026", [
+      ["Jan 2026", "1st place, GSEA Kazakhstan", "Global Student Entrepreneur Awards, national round."],
+      ["Mar 2026", "Top 4, E*5 KAIST competition", "Selected among the four finalists."],
+      ["Mar 2026", "2nd place, Digital Qazaqstan Battle", "Prize awarded at the national battle.", 0, "5,000,000 KZT"],
+      ["Apr 2026", "The Starbucks Foundation Acceleration Program", "Selected to the programme."],
+      ["Aug 2026", "Top 22, TechCrunch Startup Battlefield", "Selected among the Battlefield 22; support from OpenAI for Startups.", 0, "$10,000 · OpenAI for Startups"],
+      ["Sep 2026", "Winner, The Starbucks Foundation Accelerator", "Won the accelerator programme.", 0, "$10,000"],
+      ["Sep 2026", "Top 10 startups in Asia, S-TRON Shanghai", "Presented at S-TRON in Shanghai."],
+      ["Oct 2026", "Winner, Draper Founders Challenge", "Selected to Draper University.", 1],
+      ["Nov 2026", "CortexAI joins Constructor START", "Next stage of company building.", 1],
+    ]],
+  ];
+  const tl = document.getElementById("tl");
+  tl.innerHTML = ROADMAP.map(([y, items]) => `<div class="yr"><span>${y}</span><span></span></div>` + items.map(([d, t, s, key, money]) =>
+    `<div class="tl${key ? " key" : ""}"><div class="d">${d}</div><div class="c"><b>${t}</b><span>${s}</span>${money ? `<div class="tag">${money}</div>` : ""}</div></div>`).join("")).join("");
+
+  const LOGOS = [["constructor","Constructor"],["draper","Draper University"],["techcrunch","TechCrunch"],["openai-startups","OpenAI for Startups"],
+    ["starbucks-foundation","The Starbucks Foundation"],["kaist","KAIST"],["ewc","Entrepreneurship World Cup",1],["s-tron","S-TRON",1],
+    ["domino","Domino Ventures"],["digital-qazaqstan","Digital Qazaqstan"],["jas-kenes","Jas Kenes"],["ministry-science-kz","Ministry of Science and Higher Education of Kazakhstan",1],
+    ["kyrgyz-republic","Government of the Kyrgyz Republic",1],["people-project","The People Project"]];
+  document.getElementById("logos").innerHTML = LOGOS.map(([f, n, tall]) =>
+    `<figure class="${tall ? "tall" : ""}"><img src="assets/logos/${f}.png" alt="${n}" title="${n}"></figure>`).join("");
+</script>
+</body>
+</html>

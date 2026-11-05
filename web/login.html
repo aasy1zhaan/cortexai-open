@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CortexAI Clinician Sign-in</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Michroma&family=Manrope:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/base.css">
+<style>
+  /* layout: full-bleed stage; giant split wordmark around a central graft; sign-in card bottom-right */
+  html, body { height: 100%; overflow: hidden; }
+  .stage { position: relative; height: 100%; min-height: 560px;
+    background: radial-gradient(70% 80% at 50% 45%, #0e3a74 0%, #082650 35%, #041430 70%, var(--ink) 100%); }
+  .stage::after { content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(120% 90% at 50% 50%, transparent 55%, rgba(0,0,0,.55)); }
+  canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .top { position: absolute; top: 20px; left: 24px; right: 24px; display: flex; align-items: center; justify-content: space-between; z-index: 3; }
+  .top img { height: 28px; }
+  .pillbar { display: flex; gap: 6px; padding: 6px; border-radius: 12px; align-items: center; }
+  .pillbar a { font-size: 13px; text-decoration: none; padding: 7px 12px; border-radius: 8px; color: var(--text); }
+  .pillbar a.on { background: var(--ember); color: #1a0d00; font-weight: 700; }
+  .word { position: absolute; z-index: 2; font-family: var(--display); color: #f4f8ff; line-height: .9;
+    font-size: clamp(56px, 11vw, 168px); letter-spacing: -0.02em; pointer-events: none;
+    text-shadow: 0 0 40px rgba(13,143,253,.25); }
+  .w1 { left: 2.5vw; top: 34%; }
+  .w2 { right: 2.5vw; top: 15%; }
+  .tag { position: absolute; z-index: 2; left: 2.8vw; top: calc(34% + clamp(60px, 11vw, 168px) + 18px); max-width: 330px;
+    font-family: var(--display); font-size: 11px; letter-spacing: .08em; line-height: 1.7; text-transform: uppercase; color: #d6e3f5; }
+  .hot { position: absolute; z-index: 3; display: flex; align-items: center; gap: 10px; transform: translate(-14px, -14px); pointer-events: none; transition: opacity .3s; }
+  .hot .dot { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #fff; background: rgba(255,255,255,.18); box-shadow: 0 0 18px rgba(255,138,31,.8); }
+  .hot .lbl { background: #fff; color: #05101f; font-size: 12px; font-weight: 700; padding: 6px 12px; border-radius: 8px; white-space: nowrap; }
+  .layers { position: absolute; z-index: 3; left: 24px; bottom: 24px; display: flex; gap: 8px; }
+  .layers button { width: 46px; height: 46px; border-radius: 50%; border: 1px solid rgba(255,255,255,.35); background: transparent;
+    font-family: var(--display); font-size: 12px; cursor: pointer; color: rgba(255,255,255,.55); }
+  .layers button[aria-pressed="true"] { color: #fff; border-color: #fff; background: rgba(255,255,255,.08); }
+  .card { position: absolute; z-index: 4; right: 24px; bottom: 24px; width: min(380px, calc(100% - 48px)); padding: 20px; }
+  .card h1 { font-family: var(--display); font-size: 15px; letter-spacing: .04em; display: flex; align-items: center; gap: 8px; }
+  .card h1 img { height: 20px; }
+  .card .sub { font-size: 12px; color: var(--muted); margin: 4px 0 14px; }
+  form { display: grid; gap: 10px; }
+  label { font-size: 12px; color: var(--muted); display: grid; gap: 5px; }
+  input { background: rgba(3,12,26,.6); border: 1px solid var(--line); border-radius: 10px; padding: 11px 12px; outline: none; }
+  input:focus { border-color: var(--blue); }
+  .err { color: var(--crit); font-size: 13px; min-height: 18px; }
+  .note { margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: rgba(13,143,253,.12); border: 1px solid rgba(13,143,253,.3); font-size: 12px; color: #cfe4ff; }
+  .legal { font-size: 11px; color: var(--muted); margin-top: 10px; }
+  @media (max-width: 760px) {
+    .word { font-size: 52px; } .w1 { top: 14%; } .w2 { top: 24%; } .tag { display: none; }
+    .layers { display: none; } .card { left: 16px; right: 16px; width: auto; bottom: 16px; }
+    .pillbar a:not(.on) { display: none; }
+  }
+</style>
+</head>
+<body>
+<main class="stage">
+  <canvas id="cv" aria-hidden="true"></canvas>
+  <div class="top">
+    <a href="index.html" aria-label="CortexAI home"><img src="assets/logos/cortexai.png" alt="CortexAI"></a>
+    <nav class="pillbar glass" aria-label="Site">
+      <a class="on" href="login.html">Clinician access</a>
+      <a href="index.html#platform">Platform</a>
+      <a href="index.html#roadmap">Roadmap</a>
+    </nav>
+  </div>
+  <div class="word w1" aria-hidden="true">Graft</div>
+  <div class="word w2" aria-hidden="true">Care</div>
+  <p class="tag">Predicting kidney transplant rejection from immunogenetics, drug exposure and graft-injury biomarkers, read together.</p>
+  <div class="hot" id="hot"><span class="dot"></span><span class="lbl" id="hotLbl">Immunogenetics</span></div>
+  <div class="layers" role="group" aria-label="Signal layer">
+    <button aria-pressed="true" data-l="0" title="Immunogenetics">01</button>
+    <button aria-pressed="false" data-l="1" title="Drug exposure">02</button>
+    <button aria-pressed="false" data-l="2" title="Graft injury">03</button>
+  </div>
+
+  <section class="card glass" aria-labelledby="t">
+    <h1 id="t"><img src="assets/logos/cortexai-mark.png" alt="">CortexAI Clinic</h1>
+    <p class="sub">Transplant rejection-risk workspace. Access is issued by your centre administrator.</p>
+    <form id="f" novalidate>
+      <label for="email">Work email<input id="email" type="email" autocomplete="username" required></label>
+      <label for="pw">Password<input id="pw" type="password" autocomplete="current-password" required></label>
+      <div class="err" id="err" role="alert"></div>
+      <button class="btn btn-ember" type="submit" id="go">Sign in</button>
+    </form>
+    <div class="note" id="demoNote" hidden>
+      Preview build with no server attached. Sign-in is simulated and every patient is synthetic.
+      <div style="margin-top:8px"><button class="btn btn-blue" id="demoGo" type="button">Open demo workspace</button></div>
+    </div>
+    <p class="legal">Research prototype on synthetic data. Not a medical device. Decision support only.</p>
+  </section>
+</main>
+<script src="assets/js/kidney.js"></script>
+<script src="assets/js/api.js"></script>
+<script>
+  const hot = document.getElementById("hot"), hotLbl = document.getElementById("hotLbl");
+  const k = KidneyCloud(document.getElementById("cv"), {
+    widthFrac: 0.3, cy: 0.5,
+    onHotspot([x, y], label) { hot.style.left = x + "px"; hot.style.top = y + "px"; hotLbl.textContent = label; }
+  });
+  document.querySelectorAll(".layers button").forEach(b => b.addEventListener("click", () => {
+    document.querySelectorAll(".layers button").forEach(x => x.setAttribute("aria-pressed", x === b));
+    k.setLayer(+b.dataset.l);
+  }));
+  let i = 0; const auto = setInterval(() => { i = (i + 1) % 3; document.querySelector(`.layers button[data-l="${i}"]`).click(); }, 4200);
+  document.querySelector(".layers").addEventListener("click", e => { if (e.isTrusted) clearInterval(auto); });
+
+  const err = document.getElementById("err");
+  Cortex.init().then(mode => {
+    if (mode === "demo") document.getElementById("demoNote").hidden = false;
+    else Cortex.me().then(() => location.href = "app.html").catch(() => {});
+  });
+  document.getElementById("demoGo").onclick = () => { Cortex.demoLogin(); location.href = "app.html"; };
+  document.getElementById("f").addEventListener("submit", async e => {
+    e.preventDefault(); err.textContent = "";
+    const email = document.getElementById("email").value.trim(), pw = document.getElementById("pw").value;
+    if (!email || !pw) { err.textContent = "Enter your work email and password."; return; }
+    const go = document.getElementById("go"); go.disabled = true; go.textContent = "Signing in…";
+    try { await Cortex.login(email, pw); location.href = "app.html"; }
+    catch (x) { err.textContent = x.message || "Sign-in failed."; }
+    finally { go.disabled = false; go.textContent = "Sign in"; }
+  });
+</script>
+</body>
+</html>

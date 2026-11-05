@@ -1,17 +1,18 @@
-# Local run. On Huawei Cloud, replace the db service with RDS for PostgreSQL
-# and set DATABASE_URL to the RDS connection string.
+# Local run. On Huawei Cloud, use RDS for PostgreSQL and set DATABASE_URL to its connection string.
 services:
   db:
     image: postgres:16
     environment:
       POSTGRES_USER: cortex
-      POSTGRES_PASSWORD: cortex_local_only
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me-local}
       POSTGRES_DB: cortex
     volumes: [pgdata:/var/lib/postgresql/data]
   api:
     build: .
     environment:
-      DATABASE_URL: postgresql+psycopg://cortex:cortex_local_only@db:5432/cortex
+      DATABASE_URL: postgresql+psycopg://cortex:${POSTGRES_PASSWORD:-change-me-local}@db:5432/cortex
+      CORTEX_ADMIN_EMAIL: ${CORTEX_ADMIN_EMAIL:-admin@cortex.local}
+      CORTEX_ADMIN_PASSWORD: ${CORTEX_ADMIN_PASSWORD:-}
     ports: ["8000:8000"]
     depends_on: [db]
 volumes:

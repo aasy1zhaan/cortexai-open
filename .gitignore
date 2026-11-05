@@ -1,4 +1,4 @@
-data/*.csv
 model/*.joblib
 *.db
 __pycache__/
+data/

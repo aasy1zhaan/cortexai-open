@@ -19,7 +19,7 @@ Huawei Cloud*).
 | **Alert thresholds** | Centre-tunable cut-offs with the literature behind each default (admin only). |
 | **Team and access / Audit log** | Accounts are issued by an admin; sign-ins, record views, reviews and setting changes are logged. |
 
-Public pages: `/` landing (platform, clinical basis, roadmap, recognition) and `/login`.
+Public pages: `/` landing (platform, clinical basis, roadmap, recognition), `/ai` **risk engine** (enter a recipient, get the 12-month risk, factors and signals; runs the same model in the browser) and `/login`.
 
 ## Architecture
 ```
@@ -30,6 +30,7 @@ ml/                       the medical AI, self-contained
   cortex_ml/cohort.py     demo cohort (enriched with higher-risk recipients)
   train.py                train + evaluate (patient-level split) -> ml/model/
   export_demo.py          bundle the demo cohort for the static preview and DB seed
+  export_browser_model.py export the trained model to web/assets/model.json (parity-checked vs scikit-learn)
   CLINICAL_BASIS.md       where every signal and threshold comes from
   tests/                  clinical calculation and alert-rule tests
 app/main.py               FastAPI: auth (PBKDF2 + HttpOnly cookie), clinical API, audit, static files

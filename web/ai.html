@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CortexAI Risk Engine</title>
+<meta name="description" content="Try the CortexAI kidney transplant rejection-risk model: enter a recipient's data and get a 12-month risk with the factors behind it.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/base.css">
+<style>
+  /* layout: short intro, then a two-column calculator (inputs left, sticky result right), then the model card */
+  .wrap { width: min(1180px, calc(100% - 40px)); margin: 0 auto; }
+  .nav { padding-top: 18px; }
+  .nav .bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 8px 8px 8px 18px; border-radius: 999px; }
+  .nav img { height: 24px; display: block; }
+  .nav .links { display: flex; gap: 2px; align-items: center; }
+  .nav .links a { font-size: 14px; text-decoration: none; padding: 8px 14px; border-radius: 999px; color: #d7e3f5; }
+  .nav .links a.on { background: rgba(255,255,255,.1); color: #fff; }
+  body { background: radial-gradient(70% 40% at 50% 0%, rgba(45,125,255,.28), transparent 70%), var(--ink); }
+  .intro { padding: 64px 0 28px; display: grid; gap: 14px; max-width: 780px; }
+  .intro h1 { font-size: clamp(34px, 4.6vw, 56px); font-weight: 600; line-height: 1.06;
+    background: linear-gradient(180deg, #fff 30%, #a9c7f2); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .intro p { color: #b8c9e3; font-size: 18px; margin: 0; max-width: 64ch; }
+  .presets { display: flex; gap: 8px; flex-wrap: wrap; margin: 6px 0 18px; align-items: center; }
+  .presets span { font-size: 13px; color: var(--muted); margin-right: 4px; }
+  .presets button { border: 1px solid var(--line); background: rgba(255,255,255,.04); color: #d7e3f5; padding: 7px 14px; border-radius: 999px; font-size: 13px; cursor: pointer; }
+  .presets button:hover { background: rgba(255,255,255,.09); }
+  .presets button.on { background: #fff; color: #061230; border-color: #fff; font-weight: 600; }
+
+  .calc { display: grid; grid-template-columns: 1fr 400px; gap: 20px; align-items: start; }
+  .groups { display: grid; gap: 14px; }
+  fieldset { margin: 0; padding: 18px 20px 20px; border: 1px solid var(--line); border-radius: var(--r); background: linear-gradient(170deg, rgba(24,52,100,.38), rgba(8,22,48,.6)); }
+  legend { padding: 0 6px; font-size: 14px; font-weight: 600; color: #fff; }
+  .fg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 14px; align-items: end; }
+  .fg label { display: block; font-size: 12.5px; color: #c3d3ea; font-weight: 500; }
+  .fg label > input, .fg label > select, .fg label > .derived { display: block; margin-top: 6px; }
+  .fg label small { color: var(--muted); font-weight: 400; margin-left: 4px; }
+  .fg input, .fg select { background: rgba(2,10,28,.6); border: 1px solid var(--line); border-radius: 11px; padding: 9px 11px; outline: none; width: 100%; font-variant-numeric: tabular-nums; }
+  .fg input:focus, .fg select:focus { border-color: var(--sky); }
+  .fg .derived { padding: 9px 11px; border-radius: 11px; background: rgba(124,196,255,.08); border: 1px dashed rgba(124,196,255,.3); font-variant-numeric: tabular-nums; }
+  .ck { display: flex !important; align-items: center; gap: 8px; min-height: 40px; }
+  .ck input { width: auto !important; margin: 0 !important; display: inline-block !important; }
+
+  .result { position: sticky; top: 16px; padding: 22px; border-radius: 24px; display: grid; gap: 14px; }
+  .result .k { font-size: 13px; color: var(--muted); font-weight: 500; }
+  .big { font-size: 72px; font-weight: 300; letter-spacing: -0.04em; line-height: 1; }
+  .band { display: inline-block; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; color: #04101f; }
+  .meter { position: relative; height: 10px; border-radius: 5px; background: linear-gradient(90deg, var(--ok) 0 12%, var(--warn) 12% 30%, var(--crit) 30% 100%); opacity: .9; }
+  .meter i { position: absolute; top: -5px; width: 4px; height: 20px; border-radius: 2px; background: #fff; box-shadow: 0 0 10px rgba(255,255,255,.7); transform: translateX(-2px); transition: left .25s; }
+  .scale { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); }
+  .sect { border-top: 1px solid var(--line); padding-top: 14px; }
+  .sect h3 { font-size: 13px; font-weight: 600; color: #c3d3ea; margin-bottom: 10px; }
+  .drv { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+  .drv li { display: grid; grid-template-columns: 1fr 110px 62px; gap: 10px; align-items: center; font-size: 13.5px; }
+  .drv .bar { position: relative; height: 7px; border-radius: 4px; background: rgba(255,255,255,.06); }
+  .drv .bar::after { content: ""; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: var(--line); }
+  .drv .bar b { position: absolute; top: 0; bottom: 0; border-radius: 4px; }
+  .drv .pp { text-align: right; font-variant-numeric: tabular-nums; font-size: 13px; } .up { color: #ff9d94; } .dn { color: #9fe9c8; }
+  .sig { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
+  .sig li { font-size: 13.5px; padding: 8px 11px; border-radius: 11px; border-left: 3px solid; background: rgba(255,255,255,.03); }
+  .sig li.h { border-color: var(--crit); } .sig li.m { border-color: var(--warn); } .sig li.n { border-color: var(--ok); color: var(--muted); }
+
+  section.card { margin: 56px 0 0; }
+  .mgrid { display: grid; grid-template-columns: 1.1fr 1fr; gap: 16px; }
+  .panel { padding: 24px; border-radius: var(--r); border: 1px solid var(--line); background: linear-gradient(170deg, rgba(24,52,100,.38), rgba(8,22,48,.6)); }
+  .panel h2 { font-size: 22px; font-weight: 600; margin-bottom: 10px; }
+  .panel p, .panel li { color: #c3d3ea; font-size: 15px; }
+  .kv { display: grid; grid-template-columns: 130px 1fr; gap: 8px 14px; font-size: 14px; margin: 12px 0 0; } .kv dt { color: var(--muted); } .kv dd { margin: 0; }
+  .mt { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 6px 0 14px; }
+  .mt div { padding: 12px; border-radius: 14px; background: rgba(255,255,255,.03); border: 1px solid var(--line); display: grid; }
+  .mt span { font-size: 12px; color: var(--muted); } .mt b { font-size: 26px; font-weight: 300; }
+  .cal { width: 100%; height: auto; }
+  footer { padding: 48px 0 56px; color: var(--muted); font-size: 13px; text-align: center; }
+  @media (max-width: 1000px) { .calc, .mgrid { grid-template-columns: 1fr; } .result { position: static; } }
+  @media (max-width: 640px) { .fg { grid-template-columns: 1fr 1fr; } .nav .links a:not(.btn):not(.on) { display: none; } .mt { grid-template-columns: 1fr 1fr; } .big { font-size: 56px; } }
+</style>
+</head>
+<body>
+<header class="nav">
+  <div class="wrap">
+    <div class="bar glass">
+      <a href="index.html" aria-label="CortexAI home"><img src="assets/logos/cortexai.png" alt="CortexAI"></a>
+      <nav class="links" aria-label="Main">
+        <a href="index.html">Home</a>
+        <a class="on" href="ai.html" aria-current="page">Risk engine</a>
+        <a href="index.html#science">Science</a>
+        <a class="btn btn-blue" href="login.html">Clinician sign in</a>
+      </nav>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="intro">
+    <span class="eyebrow">CortexAI risk engine</span>
+    <h1>Enter a recipient. Get the 12-month rejection risk.</h1>
+    <p>This page runs the same trained model as the clinician workspace, directly in your browser. Change any value and the risk, the factors behind it and the clinical signals update instantly. All example patients are synthetic.</p>
+  </div>
+
+  <div class="presets" role="group" aria-label="Example recipients">
+    <span>Examples</span>
+    <button data-p="stable" class="on">Stable recipient</button>
+    <button data-p="dsa">De novo DSA</button>
+    <button data-p="tac">Tacrolimus under-exposure</button>
+    <button data-p="injury">Active graft injury</button>
+    <button data-p="highimm">High immunological risk</button>
+  </div>
+
+  <div class="calc">
+    <form class="groups" id="f" novalidate>
+      <fieldset><legend>Recipient and donor</legend><div class="fg">
+        <label for="months_since_tx">Months since transplant<input id="months_since_tx" type="number" min="1" max="24" step="0.5"></label>
+        <label for="sex">Recipient sex<select id="sex"><option value="M">Male</option><option value="F">Female</option></select></label>
+        <label for="recipient_age">Recipient age<input id="recipient_age" type="number" min="18" max="90"></label>
+        <label for="donor_age">Donor age<input id="donor_age" type="number" min="0" max="90"></label>
+        <label for="donor_deceased">Donor<select id="donor_deceased"><option value="0">Living</option><option value="1">Deceased</option></select></label>
+        <label for="induction_atg">Induction<select id="induction_atg"><option value="0">Basiliximab</option><option value="1">ATG</option></select></label>
+        <label class="ck" for="retransplant"><input id="retransplant" type="checkbox"> Re-transplant</label>
+        <label class="ck" for="dgf"><input id="dgf" type="checkbox"> Delayed graft function</label>
+        <label class="ck" for="prior_rejection"><input id="prior_rejection" type="checkbox"> Prior biopsy-proven rejection</label>
+      </div></fieldset>
+
+      <fieldset><legend>Immunogenetics</legend><div class="fg">
+        <label for="hla_mismatch">HLA A/B/DR mismatch <small>0–6</small><input id="hla_mismatch" type="number" min="0" max="6"></label>
+        <label for="eplet_mm_class2">Class II eplet mismatch <small>DR+DQ</small><input id="eplet_mm_class2" type="number" min="0" max="80"></label>
+        <label for="pirche_ii">PIRCHE-II score<input id="pirche_ii" type="number" min="0" max="1500"></label>
+        <label for="cpra">cPRA <small>%</small><input id="cpra" type="number" min="0" max="100"></label>
+        <label for="dsa_mfi_max">DSA, immunodominant MFI <small>0 if none</small><input id="dsa_mfi_max" type="number" min="0" max="40000" step="50"></label>
+        <label for="dsa_class2">DSA class<select id="dsa_class2"><option value="0">None or class I</option><option value="1">Class II</option></select></label>
+      </div></fieldset>
+
+      <fieldset><legend>Graft function</legend><div class="fg">
+        <label for="crea">Creatinine now<input id="crea" type="number" min="0" step="any"></label>
+        <label for="crea_prev">Creatinine ~3 months ago <small>blank if none</small><input id="crea_prev" type="number" min="0" step="any"></label>
+        <label for="unit">Unit<select id="unit"><option value="umol">µmol/L</option><option value="mg">mg/dL</option></select></label>
+        <label>eGFR now <small>CKD-EPI 2021</small><span class="derived" id="egfr_out">—</span></label>
+        <label>eGFR change <small>vs ~3 months</small><span class="derived" id="dchg_out">—</span></label>
+        <label for="upcr">Proteinuria, UPCR <small>g/g</small><input id="upcr" type="number" min="0" step="0.01"></label>
+      </div></fieldset>
+
+      <fieldset><legend>Drug exposure</legend><div class="fg">
+        <label for="tac_trough">Tacrolimus trough <small>ng/mL</small><input id="tac_trough" type="number" min="0" step="0.1"></label>
+        <label for="tac_cv">Tacrolimus CV <small>% · blank if &lt; 3 stable troughs</small><input id="tac_cv" type="number" min="0" step="1"></label>
+        <label for="tac_ttr">Time in target range <small>%</small><input id="tac_ttr" type="number" min="0" max="100" step="1"></label>
+      </div></fieldset>
+
+      <fieldset><legend>Injury markers</legend><div class="fg">
+        <label for="ddcfdna">dd-cfDNA <small>% of total cfDNA</small><input id="ddcfdna" type="number" min="0" step="0.01"></label>
+        <label class="ck" for="bk_viremia"><input id="bk_viremia" type="checkbox"> BK viremia detected</label>
+      </div></fieldset>
+    </form>
+
+    <aside class="result glass" aria-live="polite">
+      <span class="k">Predicted risk of biopsy-proven rejection within 12 months</span>
+      <div><span class="big num" id="risk">—</span></div>
+      <div><span class="band" id="band">—</span></div>
+      <div><div class="meter"><i id="needle" style="left:0"></i></div><div class="scale"><span>0%</span><span>12%</span><span>30%</span><span>100%</span></div></div>
+      <div class="sect"><h3>Why this estimate</h3><ul class="drv" id="drv"></ul>
+        <p class="disclaimer">Each factor is reset to a typical stable recipient and re-scored; bars show the change in percentage points.</p></div>
+      <div class="sect"><h3>Clinical signals</h3><ul class="sig" id="sig"></ul></div>
+      <p class="disclaimer">Synthetic-data research model. Not a medical device. Decision support only; the treating clinician decides.</p>
+    </aside>
+  </div>
+
+  <section class="card" id="model">
+    <div class="mgrid">
+      <div class="panel">
+        <span class="eyebrow">Model card</span>
+        <h2 style="margin-top:8px">What the engine is and is not</h2>
+        <p>The engine estimates, at a clinic visit 1–24 months after kidney transplantation, the probability of biopsy-proven T-cell-mediated or antibody-mediated rejection within the next 12 months. It is meant to help transplant teams decide whom to review first, not to diagnose rejection; biopsy with Banff classification remains the reference standard, and imaging such as CT is not part of the input.</p>
+        <dl class="kv" id="kv"></dl>
+      </div>
+      <div class="panel">
+        <span class="eyebrow">Held-out performance · synthetic test set</span>
+        <div class="mt" id="mt"></div>
+        <div id="calWrap"></div>
+        <p class="disclaimer">Calibration by decile: observed vs predicted event rate; dashed line is perfect calibration. These numbers describe the simulator, not real-world accuracy.</p>
+      </div>
+    </div>
+    <div class="panel" style="margin-top:16px">
+      <h2>Limitations</h2>
+      <ul id="lims"></ul>
+    </div>
+  </section>
+</main>
+<footer>Research prototype on synthetic data. Not a medical device and not approved for clinical use. © 2026 CortexAI</footer>
+
+<script src="assets/js/charts.js"></script>
+<script src="assets/js/engine.js"></script>
+<script>
+  const $ = id => document.getElementById(id);
+  const TH = { risk_high: 0.30, risk_moderate: 0.12, ddcfdna_pct: 1.0, dsa_mfi: 1400, tac_cv_pct: 30, egfr_drop_pct: 20, upcr_g_g: 0.5, eplet_class2: 14 };
+  const PRESETS = {
+    stable:  { months_since_tx: 12, sex: "M", recipient_age: 45, donor_age: 42, donor_deceased: 0, induction_atg: 0, retransplant: 0, dgf: 0, prior_rejection: 0, hla_mismatch: 3, eplet_mm_class2: 10, pirche_ii: 120, cpra: 0, dsa_mfi_max: 0, dsa_class2: 0, crea: 110, crea_prev: 108, upcr: 0.12, tac_trough: 6.5, tac_cv: 18, tac_ttr: 85, ddcfdna: 0.25, bk_viremia: 0 },
+    dsa:     { months_since_tx: 9, sex: "F", recipient_age: 38, donor_age: 51, donor_deceased: 1, induction_atg: 0, retransplant: 0, dgf: 0, prior_rejection: 0, hla_mismatch: 5, eplet_mm_class2: 28, pirche_ii: 360, cpra: 12, dsa_mfi_max: 4200, dsa_class2: 1, crea: 118, crea_prev: 104, upcr: 0.35, tac_trough: 5.4, tac_cv: 26, tac_ttr: 67, ddcfdna: 0.62, bk_viremia: 0 },
+    tac:     { months_since_tx: 7, sex: "M", recipient_age: 24, donor_age: 47, donor_deceased: 1, induction_atg: 0, retransplant: 0, dgf: 0, prior_rejection: 0, hla_mismatch: 4, eplet_mm_class2: 18, pirche_ii: 230, cpra: 5, dsa_mfi_max: 0, dsa_class2: 0, crea: 130, crea_prev: 118, upcr: 0.2, tac_trough: 3.1, tac_cv: 44, tac_ttr: 33, ddcfdna: 0.4, bk_viremia: 0 },
+    injury:  { months_since_tx: 5, sex: "M", recipient_age: 52, donor_age: 58, donor_deceased: 1, induction_atg: 1, retransplant: 0, dgf: 1, prior_rejection: 0, hla_mismatch: 5, eplet_mm_class2: 31, pirche_ii: 410, cpra: 30, dsa_mfi_max: 6800, dsa_class2: 1, crea: 205, crea_prev: 140, upcr: 0.9, tac_trough: 5.2, tac_cv: 31, tac_ttr: 50, ddcfdna: 1.8, bk_viremia: 0 },
+    highimm: { months_since_tx: 3, sex: "F", recipient_age: 33, donor_age: 49, donor_deceased: 1, induction_atg: 1, retransplant: 1, dgf: 0, prior_rejection: 1, hla_mismatch: 6, eplet_mm_class2: 38, pirche_ii: 520, cpra: 78, dsa_mfi_max: 2600, dsa_class2: 1, crea: 125, crea_prev: "", upcr: 0.3, tac_trough: 8.4, tac_cv: "", tac_ttr: 60, ddcfdna: 0.7, bk_viremia: 0 },
+  };
+  const CHECKS = ["retransplant", "dgf", "prior_rejection", "bk_viremia"];
+  const IDS = Object.keys(PRESETS.stable);
+
+  function setPreset(name) {
+    const p = PRESETS[name];
+    $("unit").value = "umol";
+    IDS.forEach(k => { const el = $(k); if (CHECKS.includes(k)) el.checked = !!p[k]; else el.value = p[k]; });
+    document.querySelectorAll(".presets button").forEach(b => b.classList.toggle("on", b.dataset.p === name));
+    update();
+  }
+  const toMg = v => $("unit").value === "umol" ? v / 88.42 : v;
+  const num = id => { const v = $(id).value; return v === "" ? null : +v; };
+
+  function update() {
+    const sex = $("sex").value, age = num("recipient_age") ?? 45;
+    const cr = num("crea"), crp = num("crea_prev");
+    const egfr = cr ? CortexEngine.ckdEpi2021(toMg(cr), age, sex) : null;
+    const egfrPrev = crp ? CortexEngine.ckdEpi2021(toMg(crp), age, sex) : null;
+    const chg = egfr && egfrPrev ? Math.max(-80, Math.min(80, (egfr - egfrPrev) / egfrPrev * 100)) : 0;
+    $("egfr_out").textContent = egfr ? egfr.toFixed(1) + " mL/min/1.73m²" : "—";
+    $("dchg_out").textContent = egfrPrev ? (chg > 0 ? "+" : "") + chg.toFixed(0) + "%" : "No earlier value";
+    const o = {};
+    IDS.forEach(k => { if (["sex", "crea", "crea_prev"].includes(k)) return; o[k] = CHECKS.includes(k) ? ($(k).checked ? 1 : 0) : num(k); });
+    o.egfr = egfr ?? NaN; o.egfr_change_3m = chg;
+    const m = o.months_since_tx ?? 12;
+    const risk = CortexEngine.predict(o);
+    const band = risk >= TH.risk_high ? ["High", "var(--crit)"] : risk >= TH.risk_moderate ? ["Moderate", "var(--warn)"] : ["Low", "var(--ok)"];
+    $("risk").textContent = Math.round(risk * 100) + "%"; $("risk").style.color = band[1];
+    $("band").textContent = band[0]; $("band").style.background = band[1];
+    const pos = risk <= 0.12 ? risk / 0.12 * 12 : risk <= 0.30 ? 12 + (risk - 0.12) / 0.18 * 18 : 30 + (risk - 0.30) / 0.70 * 70;
+    $("needle").style.left = Math.min(100, pos) + "%";
+
+    const drv = CortexEngine.explain(o), mx = Math.max(2, ...drv.map(d => Math.abs(d.pp)));
+    $("drv").innerHTML = drv.length ? drv.map(d => { const w = Math.abs(d.pp) / mx * 50, up = d.pp > 0;
+      return `<li><span>${d.label}</span><span class="bar"><b style="${up ? `left:50%;width:${w}%;background:var(--crit)` : `right:50%;width:${w}%;background:var(--ok)`}"></b></span><span class="pp ${up ? "up" : "dn"}">${up ? "+" : "−"}${Math.abs(d.pp).toFixed(1)} pp</span></li>`; }).join("")
+      : '<li><span class="disclaimer">No single factor moves the risk by more than 0.3 points.</span></li>';
+
+    const s = [];
+    if (risk >= TH.risk_high) s.push(["h", `High predicted risk (${Math.round(risk * 100)}%)`]);
+    if (m >= 1 && o.ddcfdna >= TH.ddcfdna_pct) s.push(["h", `dd-cfDNA ${o.ddcfdna}% is above ${TH.ddcfdna_pct}%`]);
+    if (o.dsa_mfi_max >= TH.dsa_mfi) s.push(["h", `DSA MFI ${o.dsa_mfi_max.toLocaleString("en-US")} at or above ${TH.dsa_mfi.toLocaleString("en-US")}`]);
+    if (m >= 3 && chg <= -TH.egfr_drop_pct) s.push(["h", `eGFR ${chg.toFixed(0)}% vs ~3 months ago`]);
+    const lo = m <= 3 ? 8 : 5;
+    if (o.tac_trough != null && o.tac_trough < lo) s.push(["m", `Tacrolimus ${o.tac_trough} ng/mL below target (${lo}–${m <= 3 ? 12 : 8})`]);
+    if (o.tac_cv != null && o.tac_cv > TH.tac_cv_pct) s.push(["m", `Tacrolimus CV ${o.tac_cv}% above ${TH.tac_cv_pct}%`]);
+    if (o.upcr >= TH.upcr_g_g) s.push(["m", `Proteinuria ${o.upcr} g/g`]);
+    if (o.bk_viremia) s.push(["m", "BK viremia detected"]);
+    if (o.eplet_mm_class2 >= TH.eplet_class2) s.push(["m", `Class II eplet mismatch ${o.eplet_mm_class2} (≥ ${TH.eplet_class2}): higher de novo DSA risk`]);
+    $("sig").innerHTML = s.length ? s.map(([c, t]) => `<li class="${c}">${t}</li>`).join("") : '<li class="n">No signals above centre thresholds.</li>';
+  }
+
+  CortexEngine.load().then(() => {
+    document.querySelectorAll("#f input, #f select").forEach(el => el.addEventListener("input", () => {
+      document.querySelectorAll(".presets button").forEach(b => b.classList.remove("on")); update(); }));
+    $("unit").addEventListener("change", e => {
+      ["crea", "crea_prev"].forEach(id => { const v = num(id); if (v != null) $(id).value = e.target.value === "mg" ? (v / 88.42).toFixed(2) : Math.round(v * 88.42); });
+      update();
+    });
+    document.querySelectorAll(".presets button").forEach(b => b.onclick = () => setPreset(b.dataset.p));
+    setPreset("stable");
+  }).catch(() => { $("risk").textContent = "—"; $("sig").innerHTML = '<li class="h">Could not load the model file.</li>'; });
+
+  fetch("assets/demo-data.json").then(r => r.json()).then(({ model: m }) => {
+    $("kv").innerHTML = [["Target", m.target], ["Unit", m.unit], ["Inputs", m.inputs], ["Model", m.model], ["Explanations", m.explainer], ["Data", m.data]]
+      .map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("");
+    const g = m.gbm;
+    $("mt").innerHTML = [["ROC-AUC", g.roc_auc.toFixed(2)], ["PR-AUC", g.pr_auc.toFixed(2)], ["Brier", g.brier.toFixed(3)], ["Event rate", (m.event_rate * 100).toFixed(1) + "%"]]
+      .map(([k, v]) => `<div><span>${k}</span><b>${v}</b></div>`).join("");
+    const cal = g.calibration_deciles, mx = Math.max(50, ...cal.map(c => c.predicted * 100));
+    $("calWrap").innerHTML = CXChart({ series: [{ color: "var(--sky)", points: cal.map(c => ({ x: c.predicted * 100, y: c.observed * 100, label: `pred ${(c.predicted * 100).toFixed(0)}% · obs ${(c.observed * 100).toFixed(0)}%` })) },
+      { color: "var(--muted)", dashed: true, width: 1, noDots: true, points: [{ x: 0, y: 0 }, { x: mx, y: mx }] }], yUnit: "%", xMin: 0, yMin: 0, endLabel: false, height: 220, xFmt: t => t + "%", aria: "Calibration plot" });
+    $("lims").innerHTML = m.limitations.map(l => `<li>${l}</li>`).join("");
+  });
+</script>
+</body>
+</html>

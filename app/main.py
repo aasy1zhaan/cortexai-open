@@ -409,6 +409,11 @@ def login_page():
     return FileResponse(WEB / "login.html")
 
 
+@app.get("/ai")
+def ai_page():
+    return FileResponse(WEB / "ai.html")
+
+
 @app.get("/app")
 def app_page():
     return FileResponse(WEB / "app.html")

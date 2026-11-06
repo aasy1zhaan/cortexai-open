@@ -330,40 +330,23 @@
   async function renderThresholds() {
     navOn("thresholds"); setTitle("Alert thresholds", "Centre-specific cut-offs used for signals and risk bands");
     const t = await Cortex.thresholds();
-    const canEdit = S.user.role === "admin" && Cortex.mode === "live";
-    const LBL = { risk_high: ["High-risk band", "probability"], risk_moderate: ["Moderate-risk band", "probability"], ddcfdna_pct: ["dd-cfDNA", "%"], dsa_mfi: ["DSA MFI", "MFI"], dsa_rise_pct: ["DSA MFI rise", "% vs previous"], tac_cv_pct: ["Tacrolimus CV", "%"], egfr_drop_pct: ["eGFR decline", "% over ~3 mo"], upcr_g_g: ["Proteinuria", "g/g"], eplet_class2: ["Class II eplet mismatch", "count"] };
-    view.innerHTML = `<form class="panel th" id="thf">
-      ${!canEdit ? `<p class="note">${Cortex.mode !== "live" ? "Preview mode: thresholds are read-only." : "Only administrators can change thresholds."}</p>` : ""}
-      <div class="th-list">${Object.keys(LBL).map(k => `<div class="th-row"><label for="t_${k}"><b>${LBL[k][0]}</b><span class="sub">${esc(t.info[k] || "")}</span></label>
-        <div class="th-in"><input id="t_${k}" type="number" step="any" value="${t.values[k]}" ${canEdit ? "" : "disabled"}><span class="sub">${LBL[k][1]} · default ${t.defaults[k]}</span></div></div>`).join("")}</div>
-      <div class="rv-actions"><button class="btn btn-blue" type="submit" ${canEdit ? "" : "disabled"}>Save thresholds</button><span id="thmsg" class="sub" role="status"></span></div>
-    </form>`;
-    $("#thf").onsubmit = async e => {
-      e.preventDefault();
-      const body = Object.fromEntries(Object.keys(LBL).map(k => [k, parseFloat($("#t_" + k).value)]));
-      try { await Cortex.saveThresholds(body); S.wl = null; $("#thmsg").textContent = "Saved. Signals use the new values from now on."; }
-      catch (x) { $("#thmsg").textContent = x.message; }
-    };
-  }
-
-  // ---------- team ----------
-  async function renderTeam() {
-    navOn("team"); setTitle("Team and access", "Only people with an account can open the workspace");
-    const users = await Cortex.users();
-    const canEdit = S.user.role === "admin" && Cortex.mode === "live";
+    const single = (window.CORTEX_CONFIG || {}).single_account !== false;
+    const canEdit = !single && S.user.role === "admin" && Cortex.mode === "live";
     view.innerHTML = `<div class="grid g-1-1">
       <section class="panel"><header class="ph"><h3>Accounts</h3><span class="sub">${users.length}</span></header>
-        <table class="tbl compact"><thead><tr><th>Name</th><th>Email</th><th>Role</th></tr></thead><tbody>${users.map(u => `<tr><td>${esc(u.name)}</td><td class="mono">${esc(u.email)}</td><td>${esc(u.role)}</td></tr>`).join("")}</tbody></table></section>
-      <section class="panel"><header class="ph"><h3>Invite a clinician</h3></header>
+        <table class="tbl compact"><thead><tr><th>Name</th><th>Login</th><th>Role</th></tr></thead><tbody>${users.map(u => `<tr><td>${esc(u.name)}</td><td class="mono">${esc(u.email)}</td><td>${esc(u.role)}</td></tr>`).join("")}</tbody></table></section>
+      <section class="panel"><header class="ph"><h3>Access policy</h3></header>
+        ${single ? `<p class="note">Single-account mode. The workspace has one administrator account, set on the server with CORTEX_ADMIN_LOGIN and CORTEX_ADMIN_PASSWORD. New accounts cannot be created. Roles: <b>admin</b> manages thresholds, team and audit; <b>clinician</b> reads charts and records reviews.</p>` : `
         ${!canEdit ? `<p class="note">${Cortex.mode !== "live" ? "Preview mode: accounts are managed on the deployed server." : "Only administrators can create accounts."}</p>` : ""}
         <form id="uf" class="rvf">
           <label for="u_name">Full name</label><input id="u_name" required ${canEdit ? "" : "disabled"}>
-          <label for="u_email">Work email</label><input id="u_email" type="email" required ${canEdit ? "" : "disabled"}>
+          <label for="u_email">Login or work email</label><input id="u_email" required ${canEdit ? "" : "disabled"}>
           <label for="u_pw">Temporary password (min. 10 characters)</label><input id="u_pw" type="password" minlength="10" autocomplete="new-password" required ${canEdit ? "" : "disabled"}>
           <label for="u_role">Role</label><select id="u_role" ${canEdit ? "" : "disabled"}><option value="clinician">Clinician</option><option value="admin">Administrator</option></select>
           <div class="rv-actions"><button class="btn btn-blue" type="submit" ${canEdit ? "" : "disabled"}>Create account</button><span id="umsg" class="sub" role="status"></span></div>
-        </form></section></div>`;
-    $("#uf").onsubmit = async e => {
+        </form>`}</section></div>`;
+    const uf = $("#uf");
+    if (uf) uf.onsubmit = async e => {
       e.preventDefault();
       try { await Cortex.createUser({ name: $("#u_name").value.trim(), email: $("#u_email").value.trim(), password: $("#u_pw").value, role: $("#u_role").value }); renderTeam(); }
       catch (x) { $("#umsg").textContent = x.message; }
@@ -396,7 +379,7 @@
   async function boot() {
     const mode = await Cortex.init();
     try { S.user = await Cortex.me(); }
-    catch { if (mode === "demo") { Cortex.demoLogin(); S.user = await Cortex.me(); } else { location.href = "login.html"; return; } }
+    catch { location.href = "login.html"; return; }
     $("#uname").textContent = S.user.name; $("#urole").textContent = S.user.role === "admin" ? "Administrator" : "Clinician";
     $("#mode").textContent = mode === "live" ? "Live · synthetic cohort" : "Preview · synthetic data";
     $("#mode").classList.toggle("demo", mode !== "live");

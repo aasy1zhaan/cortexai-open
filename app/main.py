@@ -20,7 +20,7 @@ from typing import Optional
 from fastapi import Cookie, Depends, FastAPI, HTTPException, Request, Response
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, Field
+from pydantic import AliasChoices, BaseModel, Field
 from sqlalchemy import JSON, Column, DateTime, Integer, String, Text, create_engine, select
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
 
@@ -132,14 +132,20 @@ def audit(db: Session, user_id, action, target="", detail=""):
 def init_db():
     Base.metadata.create_all(engine)
     with SessionLocal() as db:
-        if not db.scalar(select(User).limit(1)):
-            email = os.getenv("CORTEX_ADMIN_EMAIL", "admin@cortex.local")
-            pw = os.getenv("CORTEX_ADMIN_PASSWORD") or secrets.token_urlsafe(14)
-            db.add(User(email=email.lower(), name=os.getenv("CORTEX_ADMIN_NAME", "Administrator"),
-                        role="admin", pw_hash=hash_pw(pw)))
-            if not os.getenv("CORTEX_ADMIN_PASSWORD"):
+        login_name = (os.getenv("CORTEX_ADMIN_LOGIN") or os.getenv("CORTEX_ADMIN_EMAIL") or "admin").lower().strip()
+        env_pw = os.getenv("CORTEX_ADMIN_PASSWORD")
+        admin = db.scalar(select(User).where(User.email == login_name))
+        if admin and env_pw and not verify_pw(env_pw, admin.pw_hash):
+            admin.pw_hash = hash_pw(env_pw)          # rotating the env password rotates the account
+        if not admin:
+            pw = env_pw or secrets.token_urlsafe(14)
+            db.add(User(email=login_name, name=os.getenv("CORTEX_ADMIN_NAME", "Administrator"), role="admin", pw_hash=hash_pw(pw)))
+            if not env_pw:
                 log.warning("Created admin %s with generated password: %s  (set CORTEX_ADMIN_PASSWORD to choose one)",
-                            email, pw)
+                            login_name, pw)
+        if SINGLE_ACCOUNT:                           # only the configured administrator may exist
+            for u in db.scalars(select(User).where(User.email != login_name)):
+                db.delete(u)
         if not db.scalar(select(Patient).limit(1)):
             seed = WEB_DIR / "assets" / "demo-data.json"
             pts = [x["patient"] for x in json.loads(seed.read_text())["patients"]] if seed.exists() else demo_cohort()
@@ -150,6 +156,7 @@ def init_db():
         db.commit()
 
 
+SINGLE_ACCOUNT = os.getenv("CORTEX_SINGLE_ACCOUNT", "1") == "1"
 init_db()
 app = FastAPI(title="CortexAI Open", version="0.2.0", docs_url="/api/docs", openapi_url="/api/openapi.json")
 
@@ -196,21 +203,21 @@ async def security_headers(request: Request, call_next):
 # ---------- auth ----------
 
 class LoginIn(BaseModel):
-    email: str
-    password: str
+    login: str = Field(min_length=1, max_length=200, validation_alias=AliasChoices("login", "email"))
+    password: str = Field(min_length=1, max_length=200)
 
 
 @app.post("/api/auth/login")
 def login(body: LoginIn, request: Request, response: Response, db: Session = Depends(get_db)):
-    key = f"{body.email.lower()}|{request.client.host if request.client else ''}"
+    key = f"{body.login.lower()}|{request.client.host if request.client else ''}"
     if rate_limited(key):
         raise HTTPException(429, "Too many attempts. Try again in 10 minutes.")
-    u = db.scalar(select(User).where(User.email == body.email.lower().strip()))
+    u = db.scalar(select(User).where(User.email == body.login.lower().strip()))
     if not u or not verify_pw(body.password, u.pw_hash):
         _attempts[key].append(time.time())
-        audit(db, None, "login_failed", body.email.lower()[:60])
+        audit(db, None, "login_failed", body.login.lower()[:60])
         db.commit()
-        raise HTTPException(401, "Invalid email or password")
+        raise HTTPException(401, "Invalid login or password")
     token = secrets.token_urlsafe(32)
     db.add(SessionToken(token_hash=tok_hash(token), user_id=u.id, expires_at=now() + timedelta(hours=12)))
     audit(db, u.id, "login")
@@ -250,6 +257,8 @@ def list_users(_: User = Depends(admin_user), db: Session = Depends(get_db)):
 
 @app.post("/api/users")
 def create_user(body: UserIn, a: User = Depends(admin_user), db: Session = Depends(get_db)):
+    if SINGLE_ACCOUNT:
+        raise HTTPException(403, "Single-account mode: new accounts are disabled")
     if db.scalar(select(User).where(User.email == body.email.lower())):
         raise HTTPException(409, "User exists")
     db.add(User(email=body.email.lower(), name=body.name, role=body.role, pw_hash=hash_pw(body.password)))
@@ -417,6 +426,12 @@ def ai_page():
 @app.get("/app")
 def app_page():
     return FileResponse(WEB / "app.html")
+
+
+@app.get("/assets/js/config.js", include_in_schema=False)
+def client_config():
+    body = "window.CORTEX_CONFIG = " + json.dumps({"demo": False, "single_account": SINGLE_ACCOUNT}) + ";"
+    return Response(body, media_type="text/javascript", headers={"Cache-Control": "no-store"})
 
 
 app.mount("/", StaticFiles(directory=WEB), name="web")

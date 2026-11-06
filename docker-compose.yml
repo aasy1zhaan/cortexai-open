@@ -11,7 +11,8 @@ services:
     build: .
     environment:
       DATABASE_URL: postgresql+psycopg://cortex:${POSTGRES_PASSWORD:-change-me-local}@db:5432/cortex
-      CORTEX_ADMIN_EMAIL: ${CORTEX_ADMIN_EMAIL:-admin@cortex.local}
+      CORTEX_ADMIN_LOGIN: ${CORTEX_ADMIN_LOGIN:-admin}
+      CORTEX_SINGLE_ACCOUNT: ${CORTEX_SINGLE_ACCOUNT:-1}
       CORTEX_ADMIN_PASSWORD: ${CORTEX_ADMIN_PASSWORD:-}
     ports: ["8000:8000"]
     depends_on: [db]

@@ -67,19 +67,19 @@
     <h2 id="t"><img src="assets/logos/cortexai-mark.png" alt="">Clinician sign in</h2>
     <p class="sub">Access is issued by your centre administrator.</p>
     <form id="f" novalidate>
-      <label for="email">Work email<input id="email" type="email" autocomplete="username" required></label>
+      <label for="email">Login<input id="email" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required></label>
       <label for="pw">Password<input id="pw" type="password" autocomplete="current-password" required></label>
       <div class="err" id="err" role="alert"></div>
       <button class="btn btn-blue" type="submit" id="go" style="padding:13px">Sign in</button>
     </form>
     <div class="note" id="demoNote" hidden>
-      <span>Preview build with no server attached. Every patient is synthetic and sign-in is simulated.</span>
-      <button class="btn btn-light" id="demoGo" type="button">Open demo workspace</button>
+      <span>Preview build with no server attached. Every patient is synthetic.</span>
     </div>
     <p class="legal">Research prototype on synthetic data. Not a medical device. Decision support only.</p>
   </section>
 </main>
 <script src="assets/js/kidney.js"></script>
+<script src="assets/js/config.js"></script>
 <script src="assets/js/api.js"></script>
 <script>
   const hot = document.getElementById("hot"), hotLbl = document.getElementById("hotLbl");
@@ -95,11 +95,10 @@
     if (mode === "demo") document.getElementById("demoNote").hidden = false;
     else Cortex.me().then(() => location.href = "app.html").catch(() => {});
   });
-  document.getElementById("demoGo").onclick = () => { Cortex.demoLogin(); location.href = "app.html"; };
   document.getElementById("f").addEventListener("submit", async e => {
     e.preventDefault(); err.textContent = "";
     const email = document.getElementById("email").value.trim(), pw = document.getElementById("pw").value;
-    if (!email || !pw) { err.textContent = "Enter your work email and password."; return; }
+    if (!email || !pw) { err.textContent = "Enter your login and password."; return; }
     const go = document.getElementById("go"); go.disabled = true; go.textContent = "Signing in…";
     try { await Cortex.login(email, pw); location.href = "app.html"; }
     catch (x) { err.textContent = x.message || "Sign-in failed."; }

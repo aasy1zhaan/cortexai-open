@@ -24,6 +24,8 @@
   const Cortex = {
     async init() {
       if (S.mode) return S.mode;
+      const C = window.CORTEX_CONFIG || {};
+      if (C.demo === false) { S.mode = "live"; return S.mode; }   // deployed: never fall back to demo data
       try {
         const r = await fetch("/api/health", { cache: "no-store" });
         const b = r.ok ? await r.json() : null;
@@ -32,10 +34,19 @@
       return S.mode;
     },
     get mode() { return S.mode; },
-    demoLogin() { ss.set("cx_demo_user", JSON.stringify({ name: "Demo clinician", role: "admin", email: "demo@preview" })); },
-    async login(email, password) {
-      if (S.mode === "demo") { Cortex.demoLogin(); return; }
-      return j("/api/auth/login", { method: "POST", body: JSON.stringify({ email, password }) });
+    async login(login, password) {
+      if (S.mode === "demo") {
+        const C = (window.CORTEX_CONFIG || {}), P = C.demo_pw;
+        if (!P || !window.crypto || !crypto.subtle) throw new Error("Sign-in is unavailable in this browser.");
+        const hex = s => new Uint8Array(s.match(/../g).map(h => parseInt(h, 16)));
+        const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
+        const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt: hex(P.salt), iterations: P.iter }, key, 256);
+        const got = [...new Uint8Array(bits)].map(b => b.toString(16).padStart(2, "0")).join("");
+        if (login.toLowerCase() !== C.demo_login || got !== P.hash) { const e = new Error("Invalid login or password"); e.status = 401; throw e; }
+        ss.set("cx_demo_user", JSON.stringify({ name: "Administrator", role: "admin", email: C.demo_login }));
+        return;
+      }
+      return j("/api/auth/login", { method: "POST", body: JSON.stringify({ login, password }) });
     },
     async logout() {
       if (S.mode === "demo") { ss.del("cx_demo_user"); return; }
@@ -93,7 +104,7 @@
       Object.entries(S.reviews).forEach(([id, rs]) => rs.forEach(r => out.push({ at: r.at, user: r.by, action: "review", target: id, detail: r.decision })));
       return out.sort((a, b) => b.at.localeCompare(a.at));
     },
-    async users() { if (S.mode === "live") return j("/api/users"); return [{ id: 1, email: "demo@preview", name: "Demo clinician", role: "admin" }]; },
+    async users() { if (S.mode === "live") return j("/api/users"); const C = window.CORTEX_CONFIG || {}; return [{ id: 1, email: C.demo_login || "admin", name: "Administrator", role: "admin" }]; },
     async createUser(u) {
       if (S.mode !== "live") throw new Error("Creating accounts needs the full deployment with the API server.");
       return j("/api/users", { method: "POST", body: JSON.stringify(u) });

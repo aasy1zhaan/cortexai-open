@@ -46,10 +46,12 @@ pip install -r requirements.txt
 python ml/train.py 6000               # ~2-4 min, writes ml/model/
 python ml/export_demo.py              # writes web/assets/demo-data.json (also used to seed the DB)
 python -m pytest ml/tests tests       # clinical + API tests
-CORTEX_ADMIN_EMAIL=you@hospital.kz CORTEX_ADMIN_PASSWORD='choose-a-long-one' uvicorn app.main:app
+CORTEX_ADMIN_LOGIN=yourlogin CORTEX_ADMIN_PASSWORD='choose-a-long-one' uvicorn app.main:app
 # open http://localhost:8000
 ```
-If `CORTEX_ADMIN_PASSWORD` is not set, a random admin password is generated and printed once in the log.
+If `CORTEX_ADMIN_PASSWORD` is not set, a random admin password is generated and printed once in the log. Changing the variable and restarting rotates the password.
+
+**Access control.** Every clinical route needs a session cookie (HttpOnly, 12 h). Roles: `admin` (thresholds, team, audit log) and `clinician` (charts, visits, reviews). By default the server runs in single-account mode (`CORTEX_SINGLE_ACCOUNT=1`): only the configured administrator exists, other accounts are removed at start-up and `POST /api/users` returns 403. Set `CORTEX_SINGLE_ACCOUNT=0` to issue clinician accounts. The deployed server serves `/assets/js/config.js` with `demo: false`, so the front end never falls back to the bundled demo data.
 Docker: `docker compose up --build` (PostgreSQL + API).
 
 ## API (all clinical routes need a session)
@@ -69,7 +71,7 @@ Docker: `docker compose up --build` (PostgreSQL + API).
 
 1. Create a VPC, an ECS instance and an RDS for PostgreSQL instance in the same VPC; open 443 only.
 2. `docker build -t swr.<region>.myhuaweicloud.com/<org>/cortex-open:0.2 . && docker push …`
-3. On ECS: `docker run -d -p 8000:8000 -e DATABASE_URL=postgresql+psycopg://<user>:<pass>@<rds-host>:5432/cortex -e CORTEX_ADMIN_EMAIL=… -e CORTEX_ADMIN_PASSWORD=… -e COOKIE_SECURE=1 <image>` behind an HTTPS load balancer (ELB).
+3. On ECS: `docker run -d -p 8000:8000 -e DATABASE_URL=postgresql+psycopg://<user>:<pass>@<rds-host>:5432/cortex -e CORTEX_ADMIN_LOGIN=… -e CORTEX_ADMIN_PASSWORD=… -e COOKIE_SECURE=1 <image>` behind an HTTPS load balancer (ELB).
 4. Stage 2: move `ml/train.py` to a ModelArts training job and serve the model as a ModelArts real-time service.
 
 ## Clinical basis and limitations

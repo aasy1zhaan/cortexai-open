@@ -92,9 +92,20 @@
   .yr { font-size: 15px; font-weight: 600; padding: 28px 0 6px; display: grid; grid-template-columns: 120px 1fr; gap: 30px; } .yr span:first-child { text-align: right; }
 
   .partners { padding: 80px 0; background: linear-gradient(180deg, transparent, rgba(45,125,255,.14) 30%, rgba(45,125,255,.14) 70%, transparent); }
-  .logos { display: grid; grid-template-columns: repeat(7, 1fr); gap: 12px; }
-  .logos figure { min-width: 0; margin: 0; display: grid; place-items: center; height: 104px; padding: 18px; border-radius: 18px; background: rgba(255,255,255,.03); border: 1px solid var(--line); }
-  .logos img { max-height: 48px; max-width: 100%; object-fit: contain; opacity: .82; } .logos figure.tall img { max-height: 64px; }
+  .grants { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 64px; }
+  .grants figure { min-width: 0; margin: 0; display: grid; grid-template-rows: 1fr auto; place-items: center; gap: 10px; height: 150px; padding: 22px 18px 16px; border-radius: 18px; background: rgba(255,255,255,.04); border: 1px solid var(--line); }
+  .grants figure.gp { border-color: rgba(124,196,255,.45); background: rgba(45,125,255,.10); }
+  .grants img { max-height: 56px; max-width: 100%; object-fit: contain; }
+  .grants figcaption { font-size: 12px; color: var(--muted); letter-spacing: .02em; }
+  .grants figure.gp figcaption { color: var(--sky); }
+  .marquee { position: relative; overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent); mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent); }
+  .marquee .track { display: flex; gap: 12px; width: max-content; animation: cx-marquee 42s linear infinite; }
+  .marquee:hover .track { animation-play-state: paused; }
+  .marquee figure { flex: 0 0 auto; margin: 0; display: grid; place-items: center; width: 200px; height: 104px; padding: 18px; border-radius: 18px; background: rgba(255,255,255,.03); border: 1px solid var(--line); }
+  .marquee img { max-height: 48px; max-width: 100%; object-fit: contain; opacity: .82; transition: opacity .2s; } .marquee figure:hover img { opacity: 1; } .marquee figure.tall img { max-height: 64px; }
+  .sub-h { text-align: center; margin: 0 0 22px; font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--sky); }
+  @keyframes cx-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  @media (prefers-reduced-motion: reduce) { .marquee .track { animation: none; flex-wrap: wrap; width: auto; justify-content: center; } }
 
   .cta { padding: 56px; display: grid; grid-template-columns: 1.3fr auto; gap: 32px; align-items: center; overflow: hidden; position: relative; }
   .cta::before { content: ""; position: absolute; inset: auto -10% -80% -10%; height: 140%; background: radial-gradient(50% 50% at 50% 50%, rgba(45,125,255,.35), transparent 70%); pointer-events: none; }
@@ -107,7 +118,7 @@
     .nav .links a:not(.btn) { display: none; }
     .what { grid-template-columns: 1fr; padding: 28px; } .facts { border-left: 0; padding-left: 0; grid-template-columns: repeat(3, 1fr); }
     .layersGrid, .refs { grid-template-columns: 1fr; } .steps { grid-template-columns: 1fr 1fr; }
-    .logos { grid-template-columns: repeat(4, 1fr); }
+    .grants { grid-template-columns: repeat(2, 1fr); } .grants figure.gp { grid-column: 1 / -1; }
     .pv-row { grid-template-columns: 6px 1.5fr .7fr 1.6fr; } .pv-row > :nth-child(4), .pv-row > :nth-child(5) { display: none; }
     .cta { grid-template-columns: 1fr; padding: 32px; }
   }
@@ -115,7 +126,7 @@
     .hero { padding-top: 120px; min-height: 0; } .stage { height: 420px; } .seg button { padding: 7px 10px; font-size: 12px; } .layerNote { display: none; }
     .facts { grid-template-columns: 1fr; } .facts b { font-size: 32px; } .steps { grid-template-columns: 1fr; }
     .timeline::before { left: 76px; } .tl, .yr { grid-template-columns: 76px 1fr; gap: 22px; } .tl .d::after { right: -27px; }
-    .logos { grid-template-columns: repeat(2, 1fr); } section { padding: 72px 0; }
+    .grants { grid-template-columns: repeat(2, 1fr); } .grants figure.gp { grid-column: 1 / -1; } .marquee figure { width: 160px; } section { padding: 72px 0; }
   }
 </style>
 </head>
@@ -129,7 +140,7 @@
         <a href="#how">How it works</a>
         <a href="#science">Science</a>
         <a href="#roadmap">Roadmap</a>
-        <a href="#partners">Partners</a>
+        <a href="#partners">Grants</a>
         <a class="btn btn-blue" href="login.html">Clinician sign in</a>
       </nav>
     </div>
@@ -230,8 +241,10 @@
 
   <section id="partners" class="partners">
     <div class="wrap">
-      <div class="sec-h c"><span class="eyebrow">Recognized and supported by</span><h2>Our partners</h2></div>
-      <div class="logos" id="logos"></div>
+      <div class="sec-h c"><span class="eyebrow">Funding</span><h2>Grants and partners</h2></div>
+      <div class="grants" id="grants"></div>
+      <p class="sub-h">Competitions and programmes we won</p>
+      <div class="marquee"><div class="track" id="wins"></div></div>
     </div>
   </section>
 
@@ -310,11 +323,14 @@
   document.getElementById("tl").innerHTML = ROADMAP.map(([y, items]) => `<div class="yr"><span>${y}</span><span></span></div>` + items.map(([d, t, s, key, money]) =>
     `<div class="tl${key ? " key" : ""}"><div class="d">${d}</div><div class="c"><b>${t}</b><span>${s}</span>${money ? `<span class="tag">${money}</span>` : ""}</div></div>`).join("")).join("");
 
-  const LOGOS = [["constructor", "Constructor"], ["draper", "Draper University"], ["techcrunch", "TechCrunch"], ["openai-startups", "OpenAI for Startups"],
-    ["starbucks-foundation", "The Starbucks Foundation"], ["kaist", "KAIST"], ["ewc", "Entrepreneurship World Cup", 1], ["s-tron", "S-TRON", 1],
-    ["domino", "Domino Ventures"], ["digital-qazaqstan", "Digital Qazaqstan"], ["jas-kenes", "Jas Kenes"], ["ministry-science-kz", "Ministry of Science and Higher Education of Kazakhstan", 1],
-    ["kyrgyz-republic", "Government of the Kyrgyz Republic", 1], ["people-project", "The People Project"]];
-  document.getElementById("logos").innerHTML = LOGOS.map(([f, n, tall]) => `<figure class="${tall ? "tall" : ""}"><img src="assets/logos/${f}.png" alt="${n}" title="${n}"></figure>`).join("");
+  const GRANTS = [["medtech-aitu", "MedTech Center, Astana IT University", "General partner", 1], ["aitu", "Astana IT University", "Grant"],
+    ["yandex-cloud", "Yandex Cloud", "Grant"], ["openai-startups", "OpenAI for Startups", "Grant"], ["starbucks-foundation", "The Starbucks Foundation", "Grant"]];
+  document.getElementById("grants").innerHTML = GRANTS.map(([f, n, role, gp]) => `<figure class="${gp ? "gp" : ""}"><img src="assets/logos/${f}.png" alt="${n}" title="${n}"><figcaption>${role}</figcaption></figure>`).join("");
+  const WINS = [["constructor", "Constructor"], ["draper", "Draper University"], ["techcrunch", "TechCrunch"], ["kaist", "KAIST"], ["ewc", "Entrepreneurship World Cup", 1],
+    ["s-tron", "S-TRON", 1], ["domino", "Domino Ventures"], ["digital-qazaqstan", "Digital Qazaqstan"], ["jas-kenes", "Jas Kenes"],
+    ["ministry-science-kz", "Ministry of Science and Higher Education of Kazakhstan", 1], ["kyrgyz-republic", "Government of the Kyrgyz Republic", 1], ["people-project", "The People Project"]];
+  const fig = ([f, n, tall]) => `<figure class="${tall ? "tall" : ""}"><img src="assets/logos/${f}.png" alt="${n}" title="${n}"></figure>`;
+  document.getElementById("wins").innerHTML = WINS.map(fig).join("") + WINS.map(fig).join("").replaceAll('alt="', 'aria-hidden="true" alt="');
 </script>
 </body>
 </html>

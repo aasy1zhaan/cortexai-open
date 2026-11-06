@@ -1,4 +1,5 @@
 /* CortexAI — one visual world: deep clinical navy, soft blue glow, glass surfaces, Apple-style type. */
+[hidden] { display: none !important; }
 :root {
   --ink: #020a1c;          /* page background */
   --navy: #071834;         /* raised surface */

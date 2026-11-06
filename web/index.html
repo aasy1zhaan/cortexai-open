@@ -107,6 +107,19 @@
   @keyframes cx-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
   @media (prefers-reduced-motion: reduce) { .marquee .track { animation: none; flex-wrap: wrap; width: auto; justify-content: center; } }
 
+  .ai-block { padding: 48px; display: grid; grid-template-columns: 1fr 1.15fr; gap: 40px; align-items: center; position: relative; overflow: hidden; }
+  .ai-block::before { content: ""; position: absolute; inset: -40% -20% auto auto; width: 70%; height: 140%; background: radial-gradient(50% 50% at 50% 50%, rgba(45,125,255,.28), transparent 70%); pointer-events: none; }
+  .ai-block h2 { font-size: clamp(28px, 3.4vw, 44px); font-weight: 600; letter-spacing: -.02em; margin: 10px 0 12px; }
+  .ai-block p { color: #c3d3ea; margin: 0 0 22px; max-width: 48ch; }
+  .ai-block ul { list-style: none; padding: 0; margin: 0 0 26px; display: grid; gap: 10px; }
+  .ai-block li { display: flex; gap: 10px; color: #d7e3f5; font-size: 15px; } .ai-block li::before { content: ""; flex: 0 0 8px; height: 8px; margin-top: 8px; border-radius: 50%; background: var(--sky); box-shadow: 0 0 10px var(--sky); }
+  .scen { display: grid; gap: 10px; position: relative; }
+  .scen a { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px; padding: 16px 18px; border-radius: 16px; background: rgba(255,255,255,.04); border: 1px solid var(--line); text-decoration: none; color: inherit; transition: background .2s, border-color .2s, transform .2s; }
+  .scen a:hover { background: rgba(45,125,255,.12); border-color: rgba(124,196,255,.4); transform: translateX(4px); }
+  .scen b { display: block; font-weight: 600; font-size: 15px; } .scen small { color: var(--muted); font-size: 13px; }
+  .scen .pct { font-variant-numeric: tabular-nums; font-weight: 600; font-size: 15px; padding: 6px 12px; border-radius: 999px; }
+  .pct.ok { color: var(--ok); background: rgba(79,216,164,.1); } .pct.warn { color: var(--warn); background: rgba(255,190,92,.1); } .pct.crit { color: var(--crit); background: rgba(255,107,97,.12); }
+  @media (max-width: 860px) { .ai-block { grid-template-columns: 1fr; padding: 28px 22px; gap: 26px; } }
   .cta { padding: 56px; display: grid; grid-template-columns: 1.3fr auto; gap: 32px; align-items: center; overflow: hidden; position: relative; }
   .cta::before { content: ""; position: absolute; inset: auto -10% -80% -10%; height: 140%; background: radial-gradient(50% 50% at 50% 50%, rgba(45,125,255,.35), transparent 70%); pointer-events: none; }
   .cta h2 { font-size: clamp(26px, 3vw, 38px); font-weight: 600; } .cta p { color: #c3d3ea; margin: 10px 0 0; max-width: 56ch; }
@@ -115,7 +128,7 @@
   footer img { height: 20px; }
 
   @media (max-width: 960px) {
-    .nav .links a:not(.btn) { display: none; }
+    .nav .links a:not(.btn):not(.keep) { display: none; } .nav .links a.keep { padding: 8px 10px; }
     .what { grid-template-columns: 1fr; padding: 28px; } .facts { border-left: 0; padding-left: 0; grid-template-columns: repeat(3, 1fr); }
     .layersGrid, .refs { grid-template-columns: 1fr; } .steps { grid-template-columns: 1fr 1fr; }
     .grants { grid-template-columns: repeat(2, 1fr); } .grants figure.gp { grid-column: 1 / -1; }
@@ -136,7 +149,7 @@
     <div class="bar glass">
       <a href="index.html" aria-label="CortexAI home"><img src="assets/logos/cortexai.png" alt="CortexAI"></a>
       <nav class="links" aria-label="Main">
-        <a href="ai.html">Risk engine</a>
+        <a class="keep" href="ai.html">AI</a>
         <a href="#how">How it works</a>
         <a href="#science">Science</a>
         <a href="#roadmap">Roadmap</a>
@@ -180,6 +193,25 @@
           <div><b class="num">22</b><span>Genetic, immunological and clinical inputs</span></div>
           <div><b>Every</b><span>Clinical decision recorded in an audit log</span></div>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="ai" style="padding-top:24px">
+    <div class="wrap">
+      <div class="ai-block glass">
+        <div style="position:relative">
+          <span class="eyebrow">Try the AI</span>
+          <h2>The risk engine, open to everyone</h2>
+          <p>Enter a recipient's labs, immunogenetics and tacrolimus history, and the trained model returns a 12-month rejection risk with the factors behind it. It runs in your browser, so nothing you enter leaves the page.</p>
+          <ul>
+            <li>Calibrated 12-month risk of biopsy-proven rejection</li>
+            <li>Drivers in percentage points: what raises and lowers the risk</li>
+            <li>Clinical signals against published thresholds (dd-cfDNA, DSA, eGFR, tacrolimus)</li>
+          </ul>
+          <a class="btn btn-blue" href="ai.html">Open the risk engine</a>
+        </div>
+        <div class="scen" id="scen" aria-label="Example recipients"></div>
       </div>
     </div>
   </section>
@@ -323,6 +355,12 @@
   document.getElementById("tl").innerHTML = ROADMAP.map(([y, items]) => `<div class="yr"><span>${y}</span><span></span></div>` + items.map(([d, t, s, key, money]) =>
     `<div class="tl${key ? " key" : ""}"><div class="d">${d}</div><div class="c"><b>${t}</b><span>${s}</span>${money ? `<span class="tag">${money}</span>` : ""}</div></div>`).join("")).join("");
 
+  // Example outputs of the current model (ml/model) for the presets on ai.html; the page itself recomputes live.
+  const SCEN = [["stable", "Stable recipient", "12 months, no DSA, steady tacrolimus", 3], ["tac", "Tacrolimus under-exposure", "Trough 3.1 ng/mL, CV 44%", 8],
+    ["dsa", "De novo DSA", "Class II DSA, MFI 4,200, 28 eplet mismatches", 29], ["highimm", "High immunological risk", "Retransplant, cPRA 78%, prior rejection", 41],
+    ["injury", "Active graft injury", "dd-cfDNA 1.8%, creatinine rising", 74]];
+  const band = r => r >= 30 ? "crit" : r >= 12 ? "warn" : "ok";
+  document.getElementById("scen").innerHTML = SCEN.map(([k, t, d, r]) => `<a href="ai.html#preset=${k}"><span><b>${t}</b><small>${d}</small></span><span class="pct ${band(r)}">${r}%</span></a>`).join("");
   const GRANTS = [["medtech-aitu", "MedTech Center, Astana IT University", "General partner", 1], ["aitu", "Astana IT University", "Grant"],
     ["yandex-cloud", "Yandex Cloud", "Grant"], ["openai-startups", "OpenAI for Startups", "Grant"], ["starbucks-foundation", "The Starbucks Foundation", "Grant"]];
   document.getElementById("grants").innerHTML = GRANTS.map(([f, n, role, gp]) => `<figure class="${gp ? "gp" : ""}"><img src="assets/logos/${f}.png" alt="${n}" title="${n}"><figcaption>${role}</figcaption></figure>`).join("");

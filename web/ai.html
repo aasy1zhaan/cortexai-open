@@ -258,7 +258,10 @@
       update();
     });
     document.querySelectorAll(".presets button").forEach(b => b.onclick = () => setPreset(b.dataset.p));
-    setPreset("stable");
+    const want = (location.hash.match(/preset=(\w+)/) || [])[1];
+    const pick = PRESETS[want] ? want : "stable";
+    document.querySelectorAll(".presets button").forEach(b => b.classList.toggle("on", b.dataset.p === pick));
+    setPreset(pick);
   }).catch(() => { $("risk").textContent = "—"; $("sig").innerHTML = '<li class="h">Could not load the model file.</li>'; });
 
   fetch("assets/demo-data.json").then(r => r.json()).then(({ model: m }) => {

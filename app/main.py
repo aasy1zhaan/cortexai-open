@@ -36,7 +36,10 @@ from cortex_ml.engine import DEFAULT_THRESHOLDS, THRESHOLD_INFO, summarize  # no
 log = logging.getLogger("cortex")
 logging.basicConfig(level=logging.INFO)
 
-engine = create_engine(os.getenv("DATABASE_URL", f"sqlite:///{ROOT / 'cortex_open.db'}"), pool_pre_ping=True)
+_db_url = os.getenv("DATABASE_URL", f"sqlite:///{ROOT / 'cortex_open.db'}")
+if _db_url.startswith(("postgres://", "postgresql://")):   # Render / Heroku style URLs -> psycopg 3 driver
+    _db_url = "postgresql+psycopg://" + _db_url.split("://", 1)[1]
+engine = create_engine(_db_url, pool_pre_ping=True)
 Base = declarative_base()
 SessionLocal = sessionmaker(engine, expire_on_commit=False)
 now = lambda: datetime.now(timezone.utc)  # noqa: E731

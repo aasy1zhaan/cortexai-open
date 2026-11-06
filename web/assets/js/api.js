@@ -37,7 +37,7 @@
     async login(login, password) {
       if (S.mode === "demo") {
         const C = (window.CORTEX_CONFIG || {}), P = C.demo_pw;
-        if (!P || !window.crypto || !crypto.subtle) throw new Error("Sign-in is unavailable in this browser.");
+        if (!P || !window.crypto || !crypto.subtle) throw new Error("Sign-in needs the server. This static copy has no account configured.");
         const hex = s => new Uint8Array(s.match(/../g).map(h => parseInt(h, 16)));
         const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
         const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt: hex(P.salt), iterations: P.iter }, key, 256);
